@@ -2,6 +2,14 @@ base {
     archivesName = "savs-essentials-core"
 }
 
+loom {
+    mods {
+        "savs-essentials-core" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
 dependencies {
     // Core logic and interfaces
 }

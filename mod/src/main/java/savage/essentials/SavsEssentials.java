@@ -1,46 +1,67 @@
 package savage.essentials;
 
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.loader.api.FabricLoader;
-import savage.essentials.api.storage.StorageEntrypoint;
-import savage.essentials.api.storage.StorageProvider;
-
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
+import savage.essentials.core.EssentialsManager;
+import savage.essentials.core.manager.ProfileManager;
+import savage.essentials.core.manager.WarpManager;
+import savage.essentials.command.HomeCommand;
+import savage.essentials.command.WarpCommand;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 
 public class SavsEssentials implements ModInitializer {
 	public static final String MOD_ID = "savs-essentials";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-	private static StorageProvider storageProvider;
-
 	@Override
 	public void onInitialize() {
-		LOGGER.info("Initializing Sav's Essentials...");
+		LOGGER.info("Savs Essentials Implementation is initializing...");
 
-		loadStorage();
+		// Initialize Core Engine with default JSON storage
+		EssentialsManager.getInstance().init("json");
+
+		// Register Commands
+		registerCommands();
+
+		// Register Lifecycle Events
+		registerEvents();
+
+		LOGGER.info("Savs Essentials Implementation initialized.");
 	}
 
-	private void loadStorage() {
-		List<StorageEntrypoint> entrypoints = FabricLoader.getInstance()
-				.getEntrypoints("savs-essentials:storage", StorageEntrypoint.class);
-
-		if (entrypoints.isEmpty()) {
-			LOGGER.error("No storage provider found! Sav's Essentials cannot function without a storage addon.");
-			return;
-		}
-
-		// For now, we just take the first one found. 
-		// Later we can add a config to choose between multiple if present.
-		storageProvider = entrypoints.get(0).createProvider();
-		storageProvider.init();
-
-		LOGGER.info("Storage provider initialized: {}", storageProvider.getClass().getSimpleName());
+	private void registerCommands() {
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+			HomeCommand.register(dispatcher);
+			WarpCommand.register(dispatcher);
+		});
 	}
 
-	public static StorageProvider getStorageProvider() {
-		return storageProvider;
+	private void registerEvents() {
+		ProfileManager pm = EssentialsManager.getInstance().getProfileManager();
+		
+		if (pm == null) return;
+
+		// Load profile on join
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+			pm.load(handler.player.getUUID()).thenRun(() -> {
+				LOGGER.debug("Loaded profile for player {}", handler.player.getName().getString());
+			});
+		});
+
+		// Unload and save profile on disconnect
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+			pm.unload(handler.player.getUUID(), true);
+			LOGGER.debug("Unloaded profile for player {}", handler.player.getName().getString());
+		});
+	}
+
+	public static ProfileManager getProfileManager() {
+		return EssentialsManager.getInstance().getProfileManager();
+	}
+
+	public static WarpManager getWarpManager() {
+		return EssentialsManager.getInstance().getWarpManager();
 	}
 }
