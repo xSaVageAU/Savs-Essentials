@@ -56,20 +56,20 @@ public class AsyncStorage implements StorageProvider {
     }
 
     @Override
-    public CompletableFuture<Void> saveProfile(UUID uuid, Profile profile) {
-        CompletableFuture<Void> result = new CompletableFuture<>();
+    public CompletableFuture<Boolean> saveProfile(UUID uuid, Profile profile) {
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
         
         pendingProfileOperations.compute(uuid, (id, existing) -> {
             CompletableFuture<?> next = (existing == null || existing.isDone())
                     ? CompletableFuture.completedFuture(null)
                     : existing;
 
-            CompletableFuture<Void> task = next.handleAsync((v, ex) -> {
+            CompletableFuture<Boolean> task = next.handleAsync((v, ex) -> {
                 try {
                     return delegate.saveProfile(uuid, profile).join();
                 } catch (Exception e) {
                     LOGGER.error("Async saveProfile failed for {}", uuid, e);
-                    throw new CompletionException(e);
+                    return false;
                 }
             }, ioExecutor);
 
@@ -77,7 +77,7 @@ public class AsyncStorage implements StorageProvider {
                 if (ex != null) {
                     result.completeExceptionally(ex);
                 } else {
-                    result.complete(null);
+                    result.complete(res);
                 }
                 pendingProfileOperations.remove(uuid, task);
             });
@@ -101,8 +101,8 @@ public class AsyncStorage implements StorageProvider {
     }
 
     @Override
-    public CompletableFuture<Void> saveWarp(Warp warp) {
-        CompletableFuture<Void> result = new CompletableFuture<>();
+    public CompletableFuture<Boolean> saveWarp(Warp warp) {
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
         String key = warp.name().toLowerCase();
         
         pendingWarpOperations.compute(key, (id, existing) -> {
@@ -110,12 +110,12 @@ public class AsyncStorage implements StorageProvider {
                     ? CompletableFuture.completedFuture(null)
                     : existing;
 
-            CompletableFuture<Void> task = next.handleAsync((v, ex) -> {
+            CompletableFuture<Boolean> task = next.handleAsync((v, ex) -> {
                 try {
                     return delegate.saveWarp(warp).join();
                 } catch (Exception e) {
                     LOGGER.error("Async saveWarp failed for {}", key, e);
-                    throw new CompletionException(e);
+                    return false;
                 }
             }, ioExecutor);
 
@@ -123,7 +123,7 @@ public class AsyncStorage implements StorageProvider {
                 if (ex != null) {
                     result.completeExceptionally(ex);
                 } else {
-                    result.complete(null);
+                    result.complete(res);
                 }
                 pendingWarpOperations.remove(key, task);
             });
@@ -135,8 +135,8 @@ public class AsyncStorage implements StorageProvider {
     }
 
     @Override
-    public CompletableFuture<Void> deleteWarp(String name) {
-        CompletableFuture<Void> result = new CompletableFuture<>();
+    public CompletableFuture<Boolean> deleteWarp(String name) {
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
         String key = name.toLowerCase();
         
         pendingWarpOperations.compute(key, (id, existing) -> {
@@ -144,12 +144,12 @@ public class AsyncStorage implements StorageProvider {
                     ? CompletableFuture.completedFuture(null)
                     : existing;
 
-            CompletableFuture<Void> task = next.handleAsync((v, ex) -> {
+            CompletableFuture<Boolean> task = next.handleAsync((v, ex) -> {
                 try {
                     return delegate.deleteWarp(name).join();
                 } catch (Exception e) {
                     LOGGER.error("Async deleteWarp failed for {}", key, e);
-                    throw new CompletionException(e);
+                    return false;
                 }
             }, ioExecutor);
 
@@ -157,7 +157,7 @@ public class AsyncStorage implements StorageProvider {
                 if (ex != null) {
                     result.completeExceptionally(ex);
                 } else {
-                    result.complete(null);
+                    result.complete(res);
                 }
                 pendingWarpOperations.remove(key, task);
             });

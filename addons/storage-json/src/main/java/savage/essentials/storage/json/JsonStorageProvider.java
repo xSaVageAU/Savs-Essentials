@@ -93,10 +93,10 @@ public class JsonStorageProvider implements StorageProvider {
     }
 
     @Override
-    public CompletableFuture<Void> saveProfile(UUID uuid, Profile profile) {
+    public CompletableFuture<Boolean> saveProfile(UUID uuid, Profile profile) {
         Path path = getProfilePath(uuid);
         saveAtomic(path, profile);
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.completedFuture(true);
     }
 
     @Override
@@ -122,21 +122,22 @@ public class JsonStorageProvider implements StorageProvider {
     }
 
     @Override
-    public CompletableFuture<Void> saveWarp(Warp warp) {
+    public CompletableFuture<Boolean> saveWarp(Warp warp) {
         Path path = warpDir.resolve(warp.name().toLowerCase() + ".json");
         saveAtomic(path, warp);
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.completedFuture(true);
     }
 
     @Override
-    public CompletableFuture<Void> deleteWarp(String name) {
+    public CompletableFuture<Boolean> deleteWarp(String name) {
         Path path = warpDir.resolve(name.toLowerCase() + ".json");
         try {
             Files.deleteIfExists(path);
         } catch (IOException e) {
             LOGGER.error("Failed to delete warp {}", name, e);
+            return CompletableFuture.completedFuture(false);
         }
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.completedFuture(true);
     }
 
     private void saveAtomic(Path path, Object data) {

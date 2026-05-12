@@ -111,16 +111,19 @@ public class ProfileManager {
     /**
      * Saves a profile from the cache to storage and broadcasts the update.
      * @param uuid The player UUID.
-     * @return A future that completes when the save is done.
+     * @return A future that completes with true if successful.
      */
-    public CompletableFuture<Void> save(UUID uuid) {
+    public CompletableFuture<Boolean> save(UUID uuid) {
         Profile profile = profileCache.synchronous().getIfPresent(uuid);
         if (profile == null) {
-            return CompletableFuture.completedFuture(null);
+            return CompletableFuture.completedFuture(false);
         }
         
-        return storage.saveProfile(uuid, profile).thenRun(() -> {
-            messaging.publishProfile(EssentialsManager.getInstance().getConfig().getServerId(), uuid, profile);
+        return storage.saveProfile(uuid, profile).thenApply(success -> {
+            if (success) {
+                messaging.publishProfile(EssentialsManager.getInstance().getConfig().getServerId(), uuid, profile);
+            }
+            return success;
         });
     }
 

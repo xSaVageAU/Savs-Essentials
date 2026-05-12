@@ -39,9 +39,9 @@ public interface StorageProvider {
      * Saves a player profile.
      * @param uuid The UUID of the player.
      * @param profile The profile to save.
-     * @return A future that completes when the save is done.
+     * @return A future that completes with true if successful, false if rejected (e.g. version collision).
      */
-    CompletableFuture<Void> saveProfile(UUID uuid, Profile profile);
+    CompletableFuture<Boolean> saveProfile(UUID uuid, Profile profile);
 
     /**
      * Loads all global warps.
@@ -52,14 +52,14 @@ public interface StorageProvider {
     /**
      * Saves a global warp.
      * @param warp The warp to save.
-     * @return A future that completes when the save is done.
+     * @return A future that completes with true if successful, false if rejected (e.g. version collision).
      */
-    CompletableFuture<Void> saveWarp(Warp warp);
+    CompletableFuture<Boolean> saveWarp(Warp warp);
 
     /**
      * Deletes a global warp.
      * @param name The name of the warp to delete.
-     * @return A future that completes when the deletion is done.
+     * @return A future that completes with true if successful, false if rejected.
      */
-    CompletableFuture<Void> deleteWarp(String name);
+    CompletableFuture<Boolean> deleteWarp(String name);
 }

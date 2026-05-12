@@ -85,8 +85,23 @@ public class WarpCommand {
             Location loc = LocationUtil.fromPlayer(player);
             Warp warp = new Warp(name, loc, EssentialsManager.getInstance().getConfig().getServerId());
             
-            manager.setWarp(warp).thenRun(() -> {
-                context.getSource().sendSuccess(() -> Component.literal("Warp '" + name + "' set!"), true);
+            manager.setWarp(warp).thenAccept(success -> {
+                if (success) {
+                    player.sendSystemMessage(Component.literal("Warp '" + name + "' set!"));
+                } else {
+                    // Collision occurred! Wait a second and try again with updated revision
+                    manager.loadAll().thenRun(() -> {
+                        Warp existing = manager.getWarp(name);
+                        Warp retryWarp = (existing != null) ? warp.withIncrementedRevision() : warp;
+                        manager.setWarp(retryWarp).thenAccept(retrySuccess -> {
+                            if (retrySuccess) {
+                                player.sendSystemMessage(Component.literal("Warp '" + name + "' set! (Resolved sync conflict)"));
+                            } else {
+                                player.sendSystemMessage(Component.literal("Failed to save warp: Database busy. Please try again."));
+                            }
+                        });
+                    });
+                }
             });
 
             return 1;
@@ -106,8 +121,12 @@ public class WarpCommand {
                 return 0;
             }
 
-            manager.deleteWarp(name).thenRun(() -> {
-                context.getSource().sendSuccess(() -> Component.literal("Warp '" + name + "' deleted!"), true);
+            manager.deleteWarp(name).thenAccept(success -> {
+                if (success) {
+                    context.getSource().sendSuccess(() -> Component.literal("Warp '" + name + "' deleted!"), true);
+                } else {
+                    context.getSource().sendFailure(Component.literal("Failed to delete warp '" + name + "': Database busy."));
+                }
             });
 
             return 1;

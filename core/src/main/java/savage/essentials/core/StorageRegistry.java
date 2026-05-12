@@ -18,9 +18,7 @@ public class StorageRegistry {
     public static void discoverProviders() {
         FabricLoader.getInstance().getEntrypoints("savs-essentials:storage", StorageEntrypoint.class)
                 .forEach(entrypoint -> {
-                    // Using the class name as ID for now, or we can add a getId() to the interface
-                    String id = entrypoint.getClass().getSimpleName().toLowerCase().replace("storageentrypoint", "");
-                    register(id, entrypoint::createProvider);
+                    register(entrypoint.getId().toLowerCase(), entrypoint::createProvider);
                 });
     }
 

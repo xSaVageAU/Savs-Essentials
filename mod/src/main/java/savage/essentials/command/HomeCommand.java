@@ -78,10 +78,25 @@ public class HomeCommand {
 
             profile.setHome(name, loc, EssentialsManager.getInstance().getConfig().getServerId());
             
-            // Save async
-            EssentialsManager.getInstance().getProfileManager().save(player.getUUID());
+            // Save async and handle collision retry
+            EssentialsManager.getInstance().getProfileManager().save(player.getUUID()).thenAccept(success -> {
+                if (success) {
+                    player.sendSystemMessage(Component.literal("Home '" + name + "' set!"));
+                } else {
+                    // Collision occurred! Fetch the latest and retry.
+                    EssentialsManager.getInstance().getProfileManager().load(player.getUUID(), player.getScoreboardName()).thenAccept(newProfile -> {
+                        newProfile.setHome(name, loc, EssentialsManager.getInstance().getConfig().getServerId());
+                        EssentialsManager.getInstance().getProfileManager().save(player.getUUID()).thenAccept(retrySuccess -> {
+                            if (retrySuccess) {
+                                player.sendSystemMessage(Component.literal("Home '" + name + "' set! (Resolved sync conflict)"));
+                            } else {
+                                player.sendSystemMessage(Component.literal("Failed to save home: Database busy. Please try again."));
+                            }
+                        });
+                    });
+                }
+            });
             
-            context.getSource().sendSuccess(() -> Component.literal("Home '" + name + "' set!"), false);
             return 1;
         } catch (Exception e) {
             context.getSource().sendFailure(Component.literal("Error: " + e.getMessage()));

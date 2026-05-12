@@ -95,24 +95,32 @@ public class WarpManager {
 
     /**
      * Creates or updates a warp and broadcasts the change.
+     * @return A future that completes with true if successful.
      */
-    public CompletableFuture<Void> setWarp(Warp warp) {
+    public CompletableFuture<Boolean> setWarp(Warp warp) {
         Warp existing = warps.get(warp.name().toLowerCase());
         Warp toSave = (existing != null) ? warp.withIncrementedRevision() : warp;
         
         warps.put(toSave.name().toLowerCase(), toSave);
-        return storage.saveWarp(toSave).thenRun(() -> {
-            messaging.publishWarp(EssentialsManager.getInstance().getConfig().getServerId(), toSave);
+        return storage.saveWarp(toSave).thenApply(success -> {
+            if (success) {
+                messaging.publishWarp(EssentialsManager.getInstance().getConfig().getServerId(), toSave);
+            }
+            return success;
         });
     }
 
     /**
      * Deletes a warp and broadcasts the change.
+     * @return A future that completes with true if successful.
      */
-    public CompletableFuture<Void> deleteWarp(String name) {
+    public CompletableFuture<Boolean> deleteWarp(String name) {
         warps.remove(name.toLowerCase());
-        return storage.deleteWarp(name).thenRun(() -> {
-            messaging.publishWarpDelete(EssentialsManager.getInstance().getConfig().getServerId(), name);
+        return storage.deleteWarp(name).thenApply(success -> {
+            if (success) {
+                messaging.publishWarpDelete(EssentialsManager.getInstance().getConfig().getServerId(), name);
+            }
+            return success;
         });
     }
 }
