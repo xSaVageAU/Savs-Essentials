@@ -1,0 +1,7 @@
+base {
+    archivesName = "savs-essentials-storage-json"
+}
+
+dependencies {
+    implementation project(":core")
+}

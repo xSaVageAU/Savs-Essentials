@@ -11,3 +11,7 @@ pluginManagement {
 
 // Should match your modid
 rootProject.name = 'savs-essentials'
+
+include 'core'
+include 'mod'
+include 'addons:storage-json'

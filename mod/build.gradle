@@ -1,0 +1,22 @@
+base {
+    archivesName = "savs-essentials"
+}
+
+dependencies {
+    implementation project(":core")
+    include project(":core")
+    
+    implementation project(":addons:storage-json")
+    include project(":addons:storage-json")
+}
+
+loom {
+    runs {
+        server {
+            server()
+            configName = "Fabric Server"
+            ideConfigGenerated = true
+            runDir = "run"
+        }
+    }
+}

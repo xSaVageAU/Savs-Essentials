@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "savs-essentials-core",
+  "version": "${version}",
+  "name": "Sav's Essentials: Core",
+  "description": "Core logic and interfaces for Sav's Essentials.",
+  "authors": [
+    "xSaVageAU"
+  ],
+  "contact": {
+    "homepage": "https://github.com/xSaVageAU/Savs-Essentials",
+    "sources": "https://github.com/xSaVageAU/Savs-Essentials"
+  },
+  "license": "MIT",
+  "environment": "server",
+  "depends": {
+    "minecraft": ">=26.1",
+    "java": ">=25"
+  }
+}

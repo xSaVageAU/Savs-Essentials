@@ -2,16 +2,16 @@
 	"schemaVersion": 1,
 	"id": "savs-essentials",
 	"version": "${version}",
-	"name": "Savs Essentials",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "Sav's Essentials",
+	"description": "The ultimate kitchen-sink essentials mod for Minecraft 26.1+.",
 	"authors": [
-		"Me!"
+		"xSaVageAU"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/xSaVageAU/Savs-Essentials",
+		"sources": "https://github.com/xSaVageAU/Savs-Essentials"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/savs-essentials/icon.png",
 	"environment": "*",
 	"entrypoints": {
@@ -24,7 +24,7 @@
 	],
 	"depends": {
 		"fabricloader": ">=0.19.2",
-		"minecraft": "~26.1.2",
+		"minecraft": ">=26.1",
 		"java": ">=25",
 		"fabric-api": "*"
 	}

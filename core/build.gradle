@@ -1,0 +1,7 @@
+base {
+    archivesName = "savs-essentials-core"
+}
+
+dependencies {
+    // Core logic and interfaces
+}
