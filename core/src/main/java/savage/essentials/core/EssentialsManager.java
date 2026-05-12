@@ -5,6 +5,7 @@ import savage.essentials.api.storage.StorageProvider;
 import savage.essentials.core.messaging.MessagingRegistry;
 import savage.essentials.core.messaging.NoOpMessaging;
 import savage.essentials.core.manager.ProfileManager;
+import savage.essentials.core.manager.TeleportManager;
 import savage.essentials.core.manager.WarpManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,16 +18,26 @@ public class EssentialsManager {
     private static final EssentialsManager INSTANCE = new EssentialsManager();
     private static final Logger LOGGER = LoggerFactory.getLogger("savs-essentials-core");
 
+    private static net.minecraft.server.MinecraftServer minecraftServer;
     private EssentialsCoreConfig config;
     private StorageProvider storage;
     private EssentialsMessaging messaging;
     private ProfileManager profileManager;
     private WarpManager warpManager;
+    private TeleportManager teleportManager;
 
     private EssentialsManager() {}
 
     public static EssentialsManager getInstance() {
         return INSTANCE;
+    }
+
+    public static net.minecraft.server.MinecraftServer getMinecraftServer() {
+        return minecraftServer;
+    }
+
+    public static void setMinecraftServer(net.minecraft.server.MinecraftServer server) {
+        minecraftServer = server;
     }
 
     /**
@@ -62,8 +73,9 @@ public class EssentialsManager {
         // 4. Initialize Managers
         this.profileManager = new ProfileManager(storage);
         this.warpManager = new WarpManager(storage);
+        this.teleportManager = new TeleportManager();
 
-        // 4. Pre-load data
+        // 5. Pre-load data
         this.warpManager.loadAll().thenRun(() -> {
             LOGGER.info("Essentials Engine ready. Loaded global warps.");
         });
@@ -81,6 +93,10 @@ public class EssentialsManager {
 
     public WarpManager getWarpManager() {
         return warpManager;
+    }
+
+    public TeleportManager getTeleportManager() {
+        return teleportManager;
     }
 
     public EssentialsMessaging getMessaging() {

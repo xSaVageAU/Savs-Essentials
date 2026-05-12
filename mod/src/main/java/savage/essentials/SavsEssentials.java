@@ -19,8 +19,14 @@ public class SavsEssentials implements ModInitializer {
 	public void onInitialize() {
 		LOGGER.info("Savs Essentials Implementation is initializing...");
 
-		// Initialize Core Engine with implementation-specific config
-		EssentialsManager.getInstance().init(new savage.essentials.config.ModEssentialsConfig());
+		// Load and persist configuration
+		savage.essentials.config.ConfigManager.load();
+
+		// Initialize Core Engine with the loaded config
+		EssentialsManager.getInstance().init(savage.essentials.config.ConfigManager.getConfig());
+
+		// Set server instance for core access
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STARTING.register(EssentialsManager::setMinecraftServer);
 
 		// Register Commands
 		registerCommands();

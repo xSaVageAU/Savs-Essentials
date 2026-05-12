@@ -68,8 +68,7 @@ public class WarpCommand {
                 return 0;
             }
 
-            LocationUtil.teleport(player, warp.location());
-            context.getSource().sendSuccess(() -> Component.literal("Teleported to warp '" + warp.name() + "'"), false);
+            EssentialsManager.getInstance().getTeleportManager().requestTeleport(player, warp.location());
             return 1;
         } catch (Exception e) {
             context.getSource().sendFailure(Component.literal("Error: " + e.getMessage()));

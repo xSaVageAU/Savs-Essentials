@@ -5,16 +5,22 @@ import java.util.UUID;
 
 public class ModEssentialsConfig implements EssentialsCoreConfig {
     
-    private final UUID serverId = UUID.randomUUID(); // In a real mod, this should be persisted
+    // Configurable fields with defaults
+    private String storageType = "json";
+    private String messagingType = "none";
+    private UUID serverId = UUID.randomUUID();
+    private int defaultMaxHomes = 10;
+    private int teleportDelaySeconds = 3;
+    private String messagePrefix = "&8[&6Essentials&8] &r";
 
     @Override
     public String getStorageType() {
-        return "json";
+        return storageType;
     }
 
     @Override
     public String getMessagingType() {
-        return "none";
+        return messagingType;
     }
 
     @Override
@@ -24,11 +30,16 @@ public class ModEssentialsConfig implements EssentialsCoreConfig {
 
     @Override
     public int getDefaultMaxHomes() {
-        return 10;
+        return defaultMaxHomes;
     }
 
     @Override
     public int getTeleportDelaySeconds() {
-        return 3;
+        return teleportDelaySeconds;
+    }
+
+    @Override
+    public String getMessagePrefix() {
+        return messagePrefix;
     }
 }

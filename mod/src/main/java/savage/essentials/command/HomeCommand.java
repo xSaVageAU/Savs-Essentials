@@ -68,6 +68,14 @@ public class HomeCommand {
             }
 
             Location loc = LocationUtil.fromPlayer(player);
+            
+            // Check home limits
+            int maxHomes = EssentialsManager.getInstance().getConfig().getDefaultMaxHomes();
+            if (!profile.getHomes().containsKey(name.toLowerCase()) && profile.getHomes().size() >= maxHomes) {
+                context.getSource().sendFailure(Component.literal("You have reached your limit of " + maxHomes + " homes!"));
+                return 0;
+            }
+
             profile.setHome(name, loc);
             
             // Save async
@@ -96,9 +104,8 @@ public class HomeCommand {
             }
 
             Location loc = profile.getHomes().get(name.toLowerCase()).location();
-            LocationUtil.teleport(player, loc);
+            EssentialsManager.getInstance().getTeleportManager().requestTeleport(player, loc);
             
-            context.getSource().sendSuccess(() -> Component.literal("Teleported to home '" + name + "'"), false);
             return 1;
         } catch (Exception e) {
             context.getSource().sendFailure(Component.literal("Error: " + e.getMessage()));
