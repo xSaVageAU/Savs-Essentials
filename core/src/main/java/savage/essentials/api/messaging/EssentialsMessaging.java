@@ -47,5 +47,5 @@ public interface EssentialsMessaging {
     void shutdown();
 
     record ProfileUpdate(UUID sourceServerId, UUID playerUuid, Profile profile) {}
-    record WarpUpdate(UUID sourceServerId, Warp warp, boolean deleted) {}
+    record WarpUpdate(UUID sourceServerId, String warpName, Warp warp, boolean deleted) {}
 }

@@ -29,6 +29,8 @@ public class SavsEssentials implements ModInitializer {
 
 		// Set server instance for core access
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STARTING.register(EssentialsManager::setMinecraftServer);
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPING.register(server -> EssentialsManager.getInstance().drain());
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> EssentialsManager.getInstance().shutdown());
 
 		// Register Commands
 		registerCommands();

@@ -27,7 +27,8 @@ public class EssentialsManager {
     private WarpManager warpManager;
     private TeleportManager teleportManager;
 
-    private EssentialsManager() {}
+    private EssentialsManager() {
+    }
 
     public static EssentialsManager getInstance() {
         return INSTANCE;
@@ -43,11 +44,12 @@ public class EssentialsManager {
 
     /**
      * Initializes the engine.
+     * 
      * @param config The engine configuration provided by the implementation.
      */
     public void init(EssentialsCoreConfig config) {
         this.config = config;
-        
+
         // 1. Discover all registered providers
         StorageRegistry.discoverProviders();
         MessagingRegistry.discoverProviders();
@@ -82,15 +84,29 @@ public class EssentialsManager {
 
         // 5. Pre-load data
         CompletableFuture.allOf(
-            this.warpManager.loadAll(),
-            this.profileManager.loadAll()
-        ).thenRun(() -> {
-            LOGGER.info("Essentials Engine ready. Loaded {} warps and {} profiles.", 
-                    warpManager.getWarps().size(), profileManager.getProfileCount());
-        });
+                this.warpManager.loadAll(),
+                this.profileManager.loadAll()).thenRun(() -> {
+                    LOGGER.info("Essentials Engine ready. Loaded {} warps and {} profiles.",
+                            warpManager.getWarps().size(), profileManager.getProfileCount());
+                });
+    }
+
+    public void drain() {
+        if (minecraftServer == null) return;
+        
+        LOGGER.info("Essentials Engine: Draining player data for {} players...", 
+                minecraftServer.getPlayerList().getPlayers().size());
+        
+        for (var player : minecraftServer.getPlayerList().getPlayers()) {
+            profileManager.save(player.getUUID());
+        }
     }
 
     public void shutdown() {
+        LOGGER.info("Essentials Engine: Shutting down resources...");
+        if (messaging != null) {
+            messaging.shutdown();
+        }
         if (storage != null) {
             storage.shutdown();
         }

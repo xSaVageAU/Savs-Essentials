@@ -36,9 +36,9 @@ public class WarpManager {
             }
 
             if (update.deleted()) {
-                warps.remove(update.warp().name());
-            } else {
-                warps.put(update.warp().name().toLowerCase(), update.warp());
+                warps.remove(update.warpName().toLowerCase());
+            } else if (update.warp() != null) {
+                warps.put(update.warpName().toLowerCase(), update.warp());
             }
         });
     }

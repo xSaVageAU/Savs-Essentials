@@ -30,7 +30,6 @@ public class NatsMessagingProvider implements EssentialsMessaging {
 
     @Override
     public void publishProfile(UUID sourceServerId, UUID playerUuid, Profile profile) {
-        if (connection == null) return;
         try {
             ProfileWire wire = new ProfileWire(sourceServerId.toString(), playerUuid.toString(), profile);
             byte[] data = GSON.toJson(wire).getBytes(StandardCharsets.UTF_8);
@@ -42,9 +41,8 @@ public class NatsMessagingProvider implements EssentialsMessaging {
 
     @Override
     public void publishWarp(UUID sourceServerId, Warp warp) {
-        if (connection == null) return;
         try {
-            WarpWire wire = new WarpWire(sourceServerId.toString(), warp, false);
+            WarpWire wire = new WarpWire(sourceServerId.toString(), warp.name(), warp, false);
             byte[] data = GSON.toJson(wire).getBytes(StandardCharsets.UTF_8);
             connection.publish(prefix + ".warps." + warp.name(), data);
         } catch (Exception e) {
@@ -54,15 +52,17 @@ public class NatsMessagingProvider implements EssentialsMessaging {
 
     @Override
     public void publishWarpDelete(UUID sourceServerId, String warpName) {
-        if (connection == null) return;
         try {
-            WarpWire wire = new WarpWire(sourceServerId.toString(), null, true);
-            wire.warpNameFallback = warpName;
+            WarpWire wire = new WarpWire(sourceServerId.toString(), warpName, null, true);
             byte[] data = GSON.toJson(wire).getBytes(StandardCharsets.UTF_8);
             connection.publish(prefix + ".warps." + warpName, data);
         } catch (Exception e) {
             LOGGER.error("Failed to publish warp deletion for {}", warpName, e);
         }
+    }
+
+    private boolean isConnected() {
+        return connection != null && connection.getStatus() == Connection.Status.CONNECTED;
     }
 
     @Override
@@ -90,14 +90,10 @@ public class NatsMessagingProvider implements EssentialsMessaging {
         warpDispatcher = connection.createDispatcher(msg -> {
             try {
                 WarpWire wire = GSON.fromJson(new String(msg.getData(), StandardCharsets.UTF_8), WarpWire.class);
-                Warp warp = wire.warp;
-                if (wire.deleted && warp == null) {
-                    // Create a dummy warp for the name if it was a deletion
-                    // This is just to satisfy the record, the 'deleted' flag is what matters
-                }
                 listener.accept(new WarpUpdate(
                         UUID.fromString(wire.serverId),
-                        warp,
+                        wire.name,
+                        wire.warp,
                         wire.deleted
                 ));
             } catch (Exception e) {
@@ -130,12 +126,13 @@ public class NatsMessagingProvider implements EssentialsMessaging {
 
     private static class WarpWire {
         String serverId;
+        String name;
         Warp warp;
         boolean deleted;
-        String warpNameFallback; // Used for deletions when warp object is null
 
-        WarpWire(String serverId, Warp warp, boolean deleted) {
+        WarpWire(String serverId, String name, Warp warp, boolean deleted) {
             this.serverId = serverId;
+            this.name = name;
             this.warp = warp;
             this.deleted = deleted;
         }
