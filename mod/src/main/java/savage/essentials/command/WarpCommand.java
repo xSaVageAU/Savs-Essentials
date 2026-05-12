@@ -83,7 +83,7 @@ public class WarpCommand {
             WarpManager manager = EssentialsManager.getInstance().getWarpManager();
 
             Location loc = LocationUtil.fromPlayer(player);
-            Warp warp = new Warp(name, loc);
+            Warp warp = new Warp(name, loc, EssentialsManager.getInstance().getConfig().getServerId());
             
             manager.setWarp(warp).thenRun(() -> {
                 context.getSource().sendSuccess(() -> Component.literal("Warp '" + name + "' set!"), true);

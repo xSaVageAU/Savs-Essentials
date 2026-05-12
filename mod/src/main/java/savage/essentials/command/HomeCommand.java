@@ -76,7 +76,7 @@ public class HomeCommand {
                 return 0;
             }
 
-            profile.setHome(name, loc);
+            profile.setHome(name, loc, EssentialsManager.getInstance().getConfig().getServerId());
             
             // Save async
             EssentialsManager.getInstance().getProfileManager().save(player.getUUID());
