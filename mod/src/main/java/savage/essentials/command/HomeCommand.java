@@ -146,10 +146,18 @@ public class HomeCommand {
                     message.append(Component.literal(", ").withStyle(ChatFormatting.GRAY));
                 }
                 
+                savage.essentials.api.data.Home homeData = profile.getHomes().get(homeName);
+                MutableComponent hoverText = Component.literal("Click to teleport to ").withStyle(ChatFormatting.GREEN)
+                        .append(Component.literal(homeName).withStyle(ChatFormatting.WHITE))
+                        .append(Component.literal("\nServer: ").withStyle(ChatFormatting.GRAY))
+                        .append(Component.literal(homeData.serverId().toString()).withStyle(ChatFormatting.GOLD))
+                        .append(Component.literal("\nDimension: ").withStyle(ChatFormatting.GRAY))
+                        .append(Component.literal(homeData.location().dimension()).withStyle(ChatFormatting.GOLD));
+
                 message.append(Component.literal(homeName)
                         .withStyle(style -> style
                                 .withColor(ChatFormatting.WHITE)
-                                .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to teleport to " + homeName)))
+                                .withHoverEvent(new HoverEvent.ShowText(hoverText))
                                 .withClickEvent(new ClickEvent.RunCommand("/home " + homeName))));
                 first = false;
             }

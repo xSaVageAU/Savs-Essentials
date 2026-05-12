@@ -153,10 +153,17 @@ public class WarpCommand {
                 message.append(Component.literal(", ").withStyle(ChatFormatting.GRAY));
             }
             
+            MutableComponent hoverText = Component.literal("Click to teleport to ").withStyle(ChatFormatting.GREEN)
+                    .append(Component.literal(warp.name()).withStyle(ChatFormatting.WHITE))
+                    .append(Component.literal("\nServer: ").withStyle(ChatFormatting.GRAY))
+                    .append(Component.literal(warp.serverId().toString()).withStyle(ChatFormatting.GOLD))
+                    .append(Component.literal("\nDimension: ").withStyle(ChatFormatting.GRAY))
+                    .append(Component.literal(warp.location().dimension()).withStyle(ChatFormatting.GOLD));
+
             message.append(Component.literal(warp.name())
                     .withStyle(style -> style
                             .withColor(ChatFormatting.WHITE)
-                            .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to teleport to " + warp.name())))
+                            .withHoverEvent(new HoverEvent.ShowText(hoverText))
                             .withClickEvent(new ClickEvent.RunCommand("/warp " + warp.name()))));
             first = false;
         }
