@@ -99,14 +99,13 @@ public class ProfileManager {
      * @return A future containing the loaded profile.
      */
     public CompletableFuture<Profile> load(UUID uuid, String initialName) {
-        return profileCache.get(uuid, (k, executor) -> storage.loadProfile(uuid).thenApply(profile -> {
-            Profile result = (profile != null) ? profile : new Profile(initialName);
-            
+        return profileCache.get(uuid, (k, executor) -> storage.loadProfile(uuid).thenApply(profile -> 
+            (profile != null) ? profile : new Profile(initialName)
+        )).thenApply(profile -> {
             // Broadcast immediately so other servers can see this player/profile
-            messaging.publishProfile(EssentialsManager.getInstance().getConfig().getServerId(), uuid, result);
-            
-            return result;
-        }));
+            messaging.publishProfile(EssentialsManager.getInstance().getConfig().getServerId(), uuid, profile);
+            return profile;
+        });
     }
 
     /**
