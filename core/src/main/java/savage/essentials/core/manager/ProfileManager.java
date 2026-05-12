@@ -1,7 +1,9 @@
 package savage.essentials.core.manager;
 
 import savage.essentials.api.data.Profile;
+import savage.essentials.api.messaging.EssentialsMessaging;
 import savage.essentials.api.storage.StorageProvider;
+import savage.essentials.core.EssentialsManager;
 
 import java.util.Map;
 import java.util.UUID;
@@ -13,10 +15,27 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ProfileManager {
     private final StorageProvider storage;
+    private final EssentialsMessaging messaging;
     private final Map<UUID, Profile> profileCache = new ConcurrentHashMap<>();
 
-    public ProfileManager(StorageProvider storage) {
+    public ProfileManager(StorageProvider storage, EssentialsMessaging messaging) {
         this.storage = storage;
+        this.messaging = messaging;
+    }
+
+    /**
+     * Initializes the manager and subscribes to remote updates.
+     */
+    public void init() {
+        messaging.subscribeProfile(update -> {
+            // Ignore updates from ourselves
+            if (update.sourceServerId().equals(EssentialsManager.getInstance().getConfig().getServerId())) {
+                return;
+            }
+            
+            // Update local cache with remote data
+            applySync(update.playerUuid(), update.profile());
+        });
     }
 
     /**
@@ -65,12 +84,16 @@ public class ProfileManager {
         return storage.loadProfile(uuid).thenApply(profile -> {
             Profile result = (profile != null) ? profile : new Profile(initialName);
             profileCache.put(uuid, result);
+            
+            // Broadcast immediately so other servers can see this player/profile
+            messaging.publishProfile(EssentialsManager.getInstance().getConfig().getServerId(), uuid, result);
+            
             return result;
         });
     }
 
     /**
-     * Saves a profile from the cache to storage.
+     * Saves a profile from the cache to storage and broadcasts the update.
      * @param uuid The player UUID.
      * @return A future that completes when the save is done.
      */
@@ -79,7 +102,10 @@ public class ProfileManager {
         if (profile == null) {
             return CompletableFuture.completedFuture(null);
         }
-        return storage.saveProfile(uuid, profile);
+        
+        return storage.saveProfile(uuid, profile).thenRun(() -> {
+            messaging.publishProfile(EssentialsManager.getInstance().getConfig().getServerId(), uuid, profile);
+        });
     }
 
     /**

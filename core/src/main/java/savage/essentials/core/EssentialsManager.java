@@ -72,9 +72,13 @@ public class EssentialsManager {
         }
 
         // 4. Initialize Managers
-        this.profileManager = new ProfileManager(storage);
-        this.warpManager = new WarpManager(storage);
+        this.profileManager = new ProfileManager(storage, messaging);
+        this.warpManager = new WarpManager(storage, messaging);
         this.teleportManager = new TeleportManager();
+
+        // Initialize synchronization listeners
+        this.profileManager.init();
+        this.warpManager.init();
 
         // 5. Pre-load data
         CompletableFuture.allOf(

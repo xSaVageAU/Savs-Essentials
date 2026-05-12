@@ -1,0 +1,19 @@
+base {
+    archivesName = "savs-essentials-messaging-nats"
+}
+
+loom {
+    mods {
+        "savs-essentials-messaging-nats" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+dependencies {
+    // Core API is required to implement the provider
+    compileOnly project(":core")
+    
+    // NATS client - bundled into the final jar
+    include(implementation("io.nats:jnats:2.25.2"))
+}

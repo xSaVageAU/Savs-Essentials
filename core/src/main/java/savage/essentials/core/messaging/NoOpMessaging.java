@@ -9,7 +9,7 @@ import java.util.function.Consumer;
 
 public class NoOpMessaging implements EssentialsMessaging {
     @Override
-    public void publishProfile(UUID sourceServerId, Profile profile) {}
+    public void publishProfile(UUID sourceServerId, UUID playerUuid, Profile profile) {}
 
     @Override
     public void publishWarp(UUID sourceServerId, Warp warp) {}

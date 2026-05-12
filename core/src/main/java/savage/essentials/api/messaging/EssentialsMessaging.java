@@ -16,9 +16,10 @@ public interface EssentialsMessaging {
      * Publishes a profile update to all listening servers.
      *
      * @param sourceServerId The ID of the server originating the update.
+     * @param playerUuid The UUID of the player.
      * @param profile The updated profile data.
      */
-    void publishProfile(UUID sourceServerId, Profile profile);
+    void publishProfile(UUID sourceServerId, UUID playerUuid, Profile profile);
 
     /**
      * Publishes a warp update to all listening servers.
@@ -40,8 +41,11 @@ public interface EssentialsMessaging {
      */
     void subscribeWarp(Consumer<WarpUpdate> listener);
 
+    /**
+     * Shuts down the messaging provider.
+     */
     void shutdown();
 
-    record ProfileUpdate(UUID sourceServerId, Profile profile) {}
+    record ProfileUpdate(UUID sourceServerId, UUID playerUuid, Profile profile) {}
     record WarpUpdate(UUID sourceServerId, Warp warp, boolean deleted) {}
 }
