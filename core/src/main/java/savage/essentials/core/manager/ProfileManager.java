@@ -31,12 +31,14 @@ public class ProfileManager {
     /**
      * Loads a profile from storage into the local cache.
      * @param uuid The player UUID.
+     * @param initialName The name to use if the profile is new.
      * @return A future containing the loaded profile.
      */
-    public CompletableFuture<Profile> load(UUID uuid) {
+    public CompletableFuture<Profile> load(UUID uuid, String initialName) {
         return storage.loadProfile(uuid).thenApply(profile -> {
-            profileCache.put(uuid, profile);
-            return profile;
+            Profile result = (profile != null) ? profile : new Profile(initialName);
+            profileCache.put(uuid, result);
+            return result;
         });
     }
 
@@ -50,7 +52,7 @@ public class ProfileManager {
         if (profile == null) {
             return CompletableFuture.completedFuture(null);
         }
-        return storage.saveProfile(profile);
+        return storage.saveProfile(uuid, profile);
     }
 
     /**
@@ -68,12 +70,11 @@ public class ProfileManager {
 
     /**
      * Updates the local cache with an externally provided profile.
-     * This is useful for cross-server synchronization (e.g., NATS)
-     * as it does NOT trigger a save back to the storage provider.
      *
-     * @param profile The new profile data to apply to the cache.
+     * @param uuid The player UUID.
+     * @param profile The new profile data.
      */
-    public void applySync(Profile profile) {
-        profileCache.put(profile.getUuid(), profile);
+    public void applySync(UUID uuid, Profile profile) {
+        profileCache.put(uuid, profile);
     }
 }

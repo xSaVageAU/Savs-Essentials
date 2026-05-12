@@ -58,23 +58,22 @@ public class JsonStorageProvider implements StorageProvider {
         return CompletableFuture.supplyAsync(() -> {
             Path path = getProfilePath(uuid);
             if (!Files.exists(path)) {
-                return new Profile(uuid);
+                return null;
             }
 
             try (var reader = Files.newBufferedReader(path)) {
-                Profile profile = GSON.fromJson(reader, Profile.class);
-                return profile != null ? profile : new Profile(uuid);
+                return GSON.fromJson(reader, Profile.class);
             } catch (IOException e) {
                 LOGGER.error("Failed to load profile for {}", uuid, e);
-                return new Profile(uuid);
+                return null;
             }
         });
     }
 
     @Override
-    public CompletableFuture<Void> saveProfile(Profile profile) {
+    public CompletableFuture<Void> saveProfile(UUID uuid, Profile profile) {
         return CompletableFuture.runAsync(() -> {
-            Path path = getProfilePath(profile.getUuid());
+            Path path = getProfilePath(uuid);
             saveAtomic(path, profile);
         });
     }

@@ -25,16 +25,17 @@ public interface StorageProvider {
     /**
      * Loads a player profile.
      * @param uuid The UUID of the player.
-     * @return A future containing the profile, or a new profile if none exists.
+     * @return A future containing the profile, or null if none exists.
      */
     CompletableFuture<Profile> loadProfile(UUID uuid);
 
     /**
      * Saves a player profile.
+     * @param uuid The UUID of the player.
      * @param profile The profile to save.
      * @return A future that completes when the save is done.
      */
-    CompletableFuture<Void> saveProfile(Profile profile);
+    CompletableFuture<Void> saveProfile(UUID uuid, Profile profile);
 
     /**
      * Loads all global warps.

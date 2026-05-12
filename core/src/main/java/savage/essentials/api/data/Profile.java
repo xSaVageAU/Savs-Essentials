@@ -2,22 +2,25 @@ package savage.essentials.api.data;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Represents a player profile containing all player-specific data.
  */
 public class Profile {
-    private final UUID uuid;
+    private String lastKnownName;
     private final Map<String, Home> homes = new HashMap<>();
     private final Map<String, String> metadata = new HashMap<>();
 
-    public Profile(UUID uuid) {
-        this.uuid = uuid;
+    public Profile(String lastKnownName) {
+        this.lastKnownName = lastKnownName;
     }
 
-    public UUID getUuid() {
-        return uuid;
+    public String getLastKnownName() {
+        return lastKnownName;
+    }
+
+    public void setLastKnownName(String lastKnownName) {
+        this.lastKnownName = lastKnownName;
     }
 
     public Map<String, Home> getHomes() {

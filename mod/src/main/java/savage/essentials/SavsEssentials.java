@@ -10,6 +10,7 @@ import savage.essentials.core.manager.WarpManager;
 import savage.essentials.command.HomeCommand;
 import savage.essentials.command.WarpCommand;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import savage.essentials.api.data.Profile;
 
 public class SavsEssentials implements ModInitializer {
 	public static final String MOD_ID = "savs-essentials";
@@ -51,8 +52,13 @@ public class SavsEssentials implements ModInitializer {
 
 		// Load profile on join
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-			pm.load(handler.player.getUUID()).thenRun(() -> {
-				LOGGER.debug("Loaded profile for player {}", handler.player.getName().getString());
+			String name = handler.player.getName().getString();
+			pm.load(handler.player.getUUID(), name).thenRun(() -> {
+				Profile profile = pm.getProfile(handler.player.getUUID());
+				if (profile != null) {
+					profile.setLastKnownName(name); // Ensure it's up to date even if loaded from file
+				}
+				LOGGER.debug("Loaded profile for player {}", name);
 			});
 		});
 
