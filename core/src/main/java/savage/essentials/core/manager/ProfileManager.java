@@ -20,12 +20,39 @@ public class ProfileManager {
     }
 
     /**
+     * Loads all profiles from storage into the cache.
+     */
+    public CompletableFuture<Void> loadAll() {
+        return storage.loadAllProfiles().thenAccept(profiles -> {
+            profileCache.putAll(profiles);
+        });
+    }
+
+    /**
      * Gets a profile from the local cache.
      * @param uuid The player UUID.
      * @return The profile, or null if not loaded.
      */
     public Profile getProfile(UUID uuid) {
         return profileCache.get(uuid);
+    }
+
+    /**
+     * Gets a profile from the cache by name (case-insensitive).
+     * @param name The player name.
+     * @return The profile, or null if not found.
+     */
+    public Profile getProfileByName(String name) {
+        for (Profile profile : profileCache.values()) {
+            if (profile.getLastKnownName().equalsIgnoreCase(name)) {
+                return profile;
+            }
+        }
+        return null;
+    }
+
+    public int getProfileCount() {
+        return profileCache.size();
     }
 
     /**

@@ -47,6 +47,32 @@ public class JsonStorageProvider implements StorageProvider {
         // No-op for JSON
     }
 
+    @Override
+    public CompletableFuture<Map<UUID, Profile>> loadAllProfiles() {
+        return CompletableFuture.supplyAsync(() -> {
+            Map<UUID, Profile> profiles = new HashMap<>();
+            if (!Files.exists(profileDir)) return profiles;
+
+            try (Stream<Path> stream = Files.walk(profileDir, 2)) {
+                stream.filter(f -> f.toString().endsWith(".json")).forEach(file -> {
+                    try (var reader = Files.newBufferedReader(file)) {
+                        Profile profile = GSON.fromJson(reader, Profile.class);
+                        if (profile != null) {
+                            String fileName = file.getFileName().toString();
+                            UUID uuid = UUID.fromString(fileName.substring(0, fileName.length() - 5));
+                            profiles.put(uuid, profile);
+                        }
+                    } catch (Exception e) {
+                        LOGGER.error("Failed to load profile file {}", file, e);
+                    }
+                });
+            } catch (IOException e) {
+                LOGGER.error("Failed to walk profiles directory", e);
+            }
+            return profiles;
+        });
+    }
+
     private Path getProfilePath(UUID uuid) {
         String id = uuid.toString();
         // Hashed subdirectories for efficiency

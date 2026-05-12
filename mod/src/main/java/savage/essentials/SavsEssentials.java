@@ -9,6 +9,7 @@ import savage.essentials.core.manager.ProfileManager;
 import savage.essentials.core.manager.WarpManager;
 import savage.essentials.command.HomeCommand;
 import savage.essentials.command.WarpCommand;
+import savage.essentials.command.PlayerInfoCommand;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import savage.essentials.api.data.Profile;
 
@@ -32,8 +33,32 @@ public class SavsEssentials implements ModInitializer {
 		// Register Commands
 		registerCommands();
 
-		// Register Lifecycle Events
-		registerEvents();
+		// Profile Manager Shortcut
+		ProfileManager pm = EssentialsManager.getInstance().getProfileManager();
+
+		// Load profile on join
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+			String currentName = handler.player.getName().getString();
+			pm.load(handler.player.getUUID(), currentName).thenRun(() -> {
+				Profile profile = pm.getProfile(handler.player.getUUID());
+				if (profile != null) {
+					String oldName = profile.getLastKnownName();
+					
+					// Detect name change
+					if (oldName != null && !oldName.equalsIgnoreCase(currentName)) {
+						profile.addPreviousName(oldName);
+						profile.setLastKnownName(currentName);
+						LOGGER.info("Player {} (UUID: {}) changed name from {}", currentName, handler.player.getUUID(), oldName);
+					}
+				}
+				LOGGER.debug("Loaded profile for player {}", currentName);
+			});
+		});
+
+		// Save profile on disconnect
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+			pm.save(handler.player.getUUID());
+		});
 
 		LOGGER.info("Savs Essentials Implementation initialized.");
 	}
@@ -42,30 +67,7 @@ public class SavsEssentials implements ModInitializer {
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 			HomeCommand.register(dispatcher);
 			WarpCommand.register(dispatcher);
-		});
-	}
-
-	private void registerEvents() {
-		ProfileManager pm = EssentialsManager.getInstance().getProfileManager();
-		
-		if (pm == null) return;
-
-		// Load profile on join
-		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-			String name = handler.player.getName().getString();
-			pm.load(handler.player.getUUID(), name).thenRun(() -> {
-				Profile profile = pm.getProfile(handler.player.getUUID());
-				if (profile != null) {
-					profile.setLastKnownName(name); // Ensure it's up to date even if loaded from file
-				}
-				LOGGER.debug("Loaded profile for player {}", name);
-			});
-		});
-
-		// Unload and save profile on disconnect
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-			pm.unload(handler.player.getUUID(), true);
-			LOGGER.debug("Unloaded profile for player {}", handler.player.getName().getString());
+			PlayerInfoCommand.register(dispatcher);
 		});
 	}
 

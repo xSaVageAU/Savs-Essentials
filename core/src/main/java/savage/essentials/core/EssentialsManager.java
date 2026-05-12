@@ -7,6 +7,7 @@ import savage.essentials.core.messaging.NoOpMessaging;
 import savage.essentials.core.manager.ProfileManager;
 import savage.essentials.core.manager.TeleportManager;
 import savage.essentials.core.manager.WarpManager;
+import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,8 +77,12 @@ public class EssentialsManager {
         this.teleportManager = new TeleportManager();
 
         // 5. Pre-load data
-        this.warpManager.loadAll().thenRun(() -> {
-            LOGGER.info("Essentials Engine ready. Loaded global warps.");
+        CompletableFuture.allOf(
+            this.warpManager.loadAll(),
+            this.profileManager.loadAll()
+        ).thenRun(() -> {
+            LOGGER.info("Essentials Engine ready. Loaded {} warps and {} profiles.", 
+                    warpManager.getWarps().size(), profileManager.getProfileCount());
         });
     }
 

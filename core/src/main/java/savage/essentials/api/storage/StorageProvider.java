@@ -1,11 +1,11 @@
 package savage.essentials.api.storage;
 
+import savage.essentials.api.data.Profile;
+import savage.essentials.api.data.Warp;
+
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-
-import savage.essentials.api.data.Profile;
-import savage.essentials.api.data.Warp;
 
 /**
  * Interface for storage providers.
@@ -21,6 +21,12 @@ public interface StorageProvider {
      * Called when the storage provider is shut down.
      */
     void shutdown();
+
+    /**
+     * Loads all player profiles from storage.
+     * @return A future containing a map of UUIDs to profiles.
+     */
+    CompletableFuture<Map<UUID, Profile>> loadAllProfiles();
 
     /**
      * Loads a player profile.
