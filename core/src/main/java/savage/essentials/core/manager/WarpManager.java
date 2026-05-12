@@ -19,6 +19,8 @@ public class WarpManager {
     private final StorageProvider storage;
     private final EssentialsMessaging messaging;
     private final Map<String, Warp> warps = new ConcurrentHashMap<>();
+    private final java.util.Queue<savage.essentials.api.messaging.EssentialsMessaging.WarpUpdate> warmupQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    private volatile boolean ready = false;
 
     public WarpManager(StorageProvider storage, EssentialsMessaging messaging) {
         this.storage = storage;
@@ -35,12 +37,36 @@ public class WarpManager {
                 return;
             }
 
-            if (update.deleted()) {
-                warps.remove(update.warpName().toLowerCase());
-            } else if (update.warp() != null) {
-                warps.put(update.warpName().toLowerCase(), update.warp());
+            if (!ready) {
+                warmupQueue.add(update);
+            } else {
+                applySync(update);
             }
         });
+    }
+    
+    public void markReady() {
+        this.ready = true;
+        while (!warmupQueue.isEmpty()) {
+            var update = warmupQueue.poll();
+            if (update != null) {
+                applySync(update);
+            }
+        }
+    }
+
+    private void applySync(savage.essentials.api.messaging.EssentialsMessaging.WarpUpdate update) {
+        if (update.deleted()) {
+            warps.remove(update.warpName().toLowerCase());
+        } else if (update.warp() != null) {
+            Warp incoming = update.warp();
+            Warp existing = warps.get(update.warpName().toLowerCase());
+            
+            if (existing != null && existing.revision() >= incoming.revision()) {
+                return; // Ignore older updates
+            }
+            warps.put(update.warpName().toLowerCase(), incoming);
+        }
     }
 
     /**
@@ -71,9 +97,12 @@ public class WarpManager {
      * Creates or updates a warp and broadcasts the change.
      */
     public CompletableFuture<Void> setWarp(Warp warp) {
-        warps.put(warp.name().toLowerCase(), warp);
-        return storage.saveWarp(warp).thenRun(() -> {
-            messaging.publishWarp(EssentialsManager.getInstance().getConfig().getServerId(), warp);
+        Warp existing = warps.get(warp.name().toLowerCase());
+        Warp toSave = (existing != null) ? warp.withIncrementedRevision() : warp;
+        
+        warps.put(toSave.name().toLowerCase(), toSave);
+        return storage.saveWarp(toSave).thenRun(() -> {
+            messaging.publishWarp(EssentialsManager.getInstance().getConfig().getServerId(), toSave);
         });
     }
 

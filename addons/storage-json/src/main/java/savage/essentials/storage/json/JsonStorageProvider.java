@@ -49,28 +49,26 @@ public class JsonStorageProvider implements StorageProvider {
 
     @Override
     public CompletableFuture<Map<UUID, Profile>> loadAllProfiles() {
-        return CompletableFuture.supplyAsync(() -> {
-            Map<UUID, Profile> profiles = new HashMap<>();
-            if (!Files.exists(profileDir)) return profiles;
+        Map<UUID, Profile> profiles = new HashMap<>();
+        if (!Files.exists(profileDir)) return CompletableFuture.completedFuture(profiles);
 
-            try (Stream<Path> stream = Files.walk(profileDir, 2)) {
-                stream.filter(f -> f.toString().endsWith(".json")).forEach(file -> {
-                    try (var reader = Files.newBufferedReader(file)) {
-                        Profile profile = GSON.fromJson(reader, Profile.class);
-                        if (profile != null) {
-                            String fileName = file.getFileName().toString();
-                            UUID uuid = UUID.fromString(fileName.substring(0, fileName.length() - 5));
-                            profiles.put(uuid, profile);
-                        }
-                    } catch (Exception e) {
-                        LOGGER.error("Failed to load profile file {}", file, e);
+        try (Stream<Path> stream = Files.walk(profileDir, 2)) {
+            stream.filter(f -> f.toString().endsWith(".json")).forEach(file -> {
+                try (var reader = Files.newBufferedReader(file)) {
+                    Profile profile = GSON.fromJson(reader, Profile.class);
+                    if (profile != null) {
+                        String fileName = file.getFileName().toString();
+                        UUID uuid = UUID.fromString(fileName.substring(0, fileName.length() - 5));
+                        profiles.put(uuid, profile);
                     }
-                });
-            } catch (IOException e) {
-                LOGGER.error("Failed to walk profiles directory", e);
-            }
-            return profiles;
-        });
+                } catch (Exception e) {
+                    LOGGER.error("Failed to load profile file {}", file, e);
+                }
+            });
+        } catch (IOException e) {
+            LOGGER.error("Failed to walk profiles directory", e);
+        }
+        return CompletableFuture.completedFuture(profiles);
     }
 
     private Path getProfilePath(UUID uuid) {
@@ -81,71 +79,64 @@ public class JsonStorageProvider implements StorageProvider {
 
     @Override
     public CompletableFuture<Profile> loadProfile(UUID uuid) {
-        return CompletableFuture.supplyAsync(() -> {
-            Path path = getProfilePath(uuid);
-            if (!Files.exists(path)) {
-                return null;
-            }
+        Path path = getProfilePath(uuid);
+        if (!Files.exists(path)) {
+            return CompletableFuture.completedFuture(null);
+        }
 
-            try (var reader = Files.newBufferedReader(path)) {
-                return GSON.fromJson(reader, Profile.class);
-            } catch (IOException e) {
-                LOGGER.error("Failed to load profile for {}", uuid, e);
-                return null;
-            }
-        });
+        try (var reader = Files.newBufferedReader(path)) {
+            return CompletableFuture.completedFuture(GSON.fromJson(reader, Profile.class));
+        } catch (IOException e) {
+            LOGGER.error("Failed to load profile for {}", uuid, e);
+            return CompletableFuture.completedFuture(null);
+        }
     }
 
     @Override
     public CompletableFuture<Void> saveProfile(UUID uuid, Profile profile) {
-        return CompletableFuture.runAsync(() -> {
-            Path path = getProfilePath(uuid);
-            saveAtomic(path, profile);
-        });
+        Path path = getProfilePath(uuid);
+        saveAtomic(path, profile);
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public CompletableFuture<Map<String, Warp>> loadWarps() {
-        return CompletableFuture.supplyAsync(() -> {
-            Map<String, Warp> warps = new HashMap<>();
-            if (!Files.exists(warpDir)) return warps;
+        Map<String, Warp> warps = new HashMap<>();
+        if (!Files.exists(warpDir)) return CompletableFuture.completedFuture(warps);
 
-            try (Stream<Path> stream = Files.list(warpDir)) {
-                stream.filter(f -> f.toString().endsWith(".json")).forEach(path -> {
-                    try (var reader = Files.newBufferedReader(path)) {
-                        Warp warp = GSON.fromJson(reader, Warp.class);
-                        if (warp != null) {
-                            warps.put(warp.name().toLowerCase(), warp);
-                        }
-                    } catch (IOException e) {
-                        LOGGER.error("Failed to load warp file {}", path, e);
+        try (Stream<Path> stream = Files.list(warpDir)) {
+            stream.filter(f -> f.toString().endsWith(".json")).forEach(path -> {
+                try (var reader = Files.newBufferedReader(path)) {
+                    Warp warp = GSON.fromJson(reader, Warp.class);
+                    if (warp != null) {
+                        warps.put(warp.name().toLowerCase(), warp);
                     }
-                });
-            } catch (IOException e) {
-                LOGGER.error("Failed to list warps directory", e);
-            }
-            return warps;
-        });
+                } catch (IOException e) {
+                    LOGGER.error("Failed to load warp file {}", path, e);
+                }
+            });
+        } catch (IOException e) {
+            LOGGER.error("Failed to list warps directory", e);
+        }
+        return CompletableFuture.completedFuture(warps);
     }
 
     @Override
     public CompletableFuture<Void> saveWarp(Warp warp) {
-        return CompletableFuture.runAsync(() -> {
-            Path path = warpDir.resolve(warp.name().toLowerCase() + ".json");
-            saveAtomic(path, warp);
-        });
+        Path path = warpDir.resolve(warp.name().toLowerCase() + ".json");
+        saveAtomic(path, warp);
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public CompletableFuture<Void> deleteWarp(String name) {
-        return CompletableFuture.runAsync(() -> {
-            Path path = warpDir.resolve(name.toLowerCase() + ".json");
-            try {
-                Files.deleteIfExists(path);
-            } catch (IOException e) {
-                LOGGER.error("Failed to delete warp {}", name, e);
-            }
-        });
+        Path path = warpDir.resolve(name.toLowerCase() + ".json");
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            LOGGER.error("Failed to delete warp {}", name, e);
+        }
+        return CompletableFuture.completedFuture(null);
     }
 
     private void saveAtomic(Path path, Object data) {

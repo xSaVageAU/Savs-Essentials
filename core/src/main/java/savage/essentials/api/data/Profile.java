@@ -11,6 +11,7 @@ import java.util.Map;
 public class Profile {
     private String lastKnownName;
     private long joinedDate;
+    private long revision = 0;
     private final List<String> previousNames = new ArrayList<>();
     private final Map<String, Home> homes = new HashMap<>();
     private final Map<String, String> metadata = new HashMap<>();
@@ -30,6 +31,7 @@ public class Profile {
 
     public void setLastKnownName(String lastKnownName) {
         this.lastKnownName = lastKnownName;
+        incrementRevision();
     }
 
     public long getJoinedDate() {
@@ -38,6 +40,15 @@ public class Profile {
 
     public void setJoinedDate(long joinedDate) {
         this.joinedDate = joinedDate;
+        incrementRevision();
+    }
+
+    public long getRevision() {
+        return revision;
+    }
+
+    public void incrementRevision() {
+        this.revision++;
     }
 
     public List<String> getPreviousNames() {
@@ -47,6 +58,7 @@ public class Profile {
     public void addPreviousName(String name) {
         if (name != null && !previousNames.contains(name)) {
             previousNames.add(name);
+            incrementRevision();
         }
     }
 
@@ -60,9 +72,12 @@ public class Profile {
 
     public void setHome(String name, Location location) {
         homes.put(name.toLowerCase(), new Home(name, location));
+        incrementRevision();
     }
 
     public void removeHome(String name) {
-        homes.remove(name.toLowerCase());
+        if (homes.remove(name.toLowerCase()) != null) {
+            incrementRevision();
+        }
     }
 }

@@ -56,9 +56,10 @@ public class EssentialsManager {
 
         // 2. Initialize the selected storage
         try {
-            this.storage = StorageRegistry.create(config.getStorageType());
+            StorageProvider rawStorage = StorageRegistry.create(config.getStorageType());
+            this.storage = new savage.essentials.core.storage.AsyncStorage(rawStorage);
             this.storage.init();
-            LOGGER.info("Essentials storage initialized: {}", storage.getClass().getSimpleName());
+            LOGGER.info("Essentials storage initialized: {}", config.getStorageType());
         } catch (Exception e) {
             LOGGER.error("Failed to initialize storage provider: " + config.getStorageType(), e);
             return;
@@ -86,6 +87,8 @@ public class EssentialsManager {
         CompletableFuture.allOf(
                 this.warpManager.loadAll(),
                 this.profileManager.loadAll()).thenRun(() -> {
+                    this.warpManager.markReady();
+                    this.profileManager.markReady();
                     LOGGER.info("Essentials Engine ready. Loaded {} warps and {} profiles.",
                             warpManager.getWarps().size(), profileManager.getProfileCount());
                 });

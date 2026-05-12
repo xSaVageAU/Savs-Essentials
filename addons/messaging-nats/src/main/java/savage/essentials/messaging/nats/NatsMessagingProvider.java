@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import savage.essentials.api.data.Profile;
 import savage.essentials.api.data.Warp;
 import savage.essentials.api.messaging.EssentialsMessaging;
+import savage.essentials.messaging.nats.util.CompressionUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -33,7 +34,7 @@ public class NatsMessagingProvider implements EssentialsMessaging {
         try {
             ProfileWire wire = new ProfileWire(sourceServerId.toString(), playerUuid.toString(), profile);
             byte[] data = GSON.toJson(wire).getBytes(StandardCharsets.UTF_8);
-            connection.publish(prefix + ".profiles." + playerUuid, data);
+            connection.publish(prefix + ".profiles." + playerUuid, CompressionUtil.compress(data));
         } catch (Exception e) {
             LOGGER.error("Failed to publish profile update for {}", playerUuid, e);
         }
@@ -44,7 +45,7 @@ public class NatsMessagingProvider implements EssentialsMessaging {
         try {
             WarpWire wire = new WarpWire(sourceServerId.toString(), warp.name(), warp, false);
             byte[] data = GSON.toJson(wire).getBytes(StandardCharsets.UTF_8);
-            connection.publish(prefix + ".warps." + warp.name(), data);
+            connection.publish(prefix + ".warps." + warp.name(), CompressionUtil.compress(data));
         } catch (Exception e) {
             LOGGER.error("Failed to publish warp update for {}", warp.name(), e);
         }
@@ -55,7 +56,7 @@ public class NatsMessagingProvider implements EssentialsMessaging {
         try {
             WarpWire wire = new WarpWire(sourceServerId.toString(), warpName, null, true);
             byte[] data = GSON.toJson(wire).getBytes(StandardCharsets.UTF_8);
-            connection.publish(prefix + ".warps." + warpName, data);
+            connection.publish(prefix + ".warps." + warpName, CompressionUtil.compress(data));
         } catch (Exception e) {
             LOGGER.error("Failed to publish warp deletion for {}", warpName, e);
         }
@@ -70,7 +71,8 @@ public class NatsMessagingProvider implements EssentialsMessaging {
         if (connection == null) return;
         profileDispatcher = connection.createDispatcher(msg -> {
             try {
-                ProfileWire wire = GSON.fromJson(new String(msg.getData(), StandardCharsets.UTF_8), ProfileWire.class);
+                byte[] decompressed = CompressionUtil.decompress(msg.getData());
+                ProfileWire wire = GSON.fromJson(new String(decompressed, StandardCharsets.UTF_8), ProfileWire.class);
                 listener.accept(new ProfileUpdate(
                         UUID.fromString(wire.serverId),
                         UUID.fromString(wire.playerUuid),
@@ -89,7 +91,8 @@ public class NatsMessagingProvider implements EssentialsMessaging {
         if (connection == null) return;
         warpDispatcher = connection.createDispatcher(msg -> {
             try {
-                WarpWire wire = GSON.fromJson(new String(msg.getData(), StandardCharsets.UTF_8), WarpWire.class);
+                byte[] decompressed = CompressionUtil.decompress(msg.getData());
+                WarpWire wire = GSON.fromJson(new String(decompressed, StandardCharsets.UTF_8), WarpWire.class);
                 listener.accept(new WarpUpdate(
                         UUID.fromString(wire.serverId),
                         wire.name,

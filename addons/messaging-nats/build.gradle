@@ -16,4 +16,7 @@ dependencies {
     
     // NATS client - bundled into the final jar
     include(implementation("io.nats:jnats:2.25.2"))
+    
+    // Zstd compression
+    include(implementation("com.github.luben:zstd-jni:1.5.7-1"))
 }

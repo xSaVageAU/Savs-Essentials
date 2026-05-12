@@ -8,7 +8,9 @@ import savage.essentials.core.EssentialsManager;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import com.github.benmanes.caffeine.cache.AsyncCache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import java.time.Duration;
 
 /**
  * Manages the lifecycle and caching of player profiles.
@@ -16,11 +18,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ProfileManager {
     private final StorageProvider storage;
     private final EssentialsMessaging messaging;
-    private final Map<UUID, Profile> profileCache = new ConcurrentHashMap<>();
+    private final AsyncCache<UUID, Profile> profileCache;
+    private final java.util.Queue<savage.essentials.api.messaging.EssentialsMessaging.ProfileUpdate> warmupQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    private volatile boolean ready = false;
 
     public ProfileManager(StorageProvider storage, EssentialsMessaging messaging) {
         this.storage = storage;
         this.messaging = messaging;
+        this.profileCache = Caffeine.newBuilder().buildAsync();
     }
 
     /**
@@ -33,9 +38,22 @@ public class ProfileManager {
                 return;
             }
             
-            // Update local cache with remote data
-            applySync(update.playerUuid(), update.profile());
+            if (!ready) {
+                warmupQueue.add(update);
+            } else {
+                applySync(update.playerUuid(), update.profile());
+            }
         });
+    }
+    
+    public void markReady() {
+        this.ready = true;
+        while (!warmupQueue.isEmpty()) {
+            var update = warmupQueue.poll();
+            if (update != null) {
+                applySync(update.playerUuid(), update.profile());
+            }
+        }
     }
 
     /**
@@ -43,7 +61,7 @@ public class ProfileManager {
      */
     public CompletableFuture<Void> loadAll() {
         return storage.loadAllProfiles().thenAccept(profiles -> {
-            profileCache.putAll(profiles);
+            profiles.forEach((uuid, profile) -> profileCache.synchronous().put(uuid, profile));
         });
     }
 
@@ -53,7 +71,7 @@ public class ProfileManager {
      * @return The profile, or null if not loaded.
      */
     public Profile getProfile(UUID uuid) {
-        return profileCache.get(uuid);
+        return profileCache.synchronous().getIfPresent(uuid);
     }
 
     /**
@@ -62,7 +80,7 @@ public class ProfileManager {
      * @return The profile, or null if not found.
      */
     public Profile getProfileByName(String name) {
-        for (Profile profile : profileCache.values()) {
+        for (Profile profile : profileCache.synchronous().asMap().values()) {
             if (profile.getLastKnownName().equalsIgnoreCase(name)) {
                 return profile;
             }
@@ -71,7 +89,7 @@ public class ProfileManager {
     }
 
     public int getProfileCount() {
-        return profileCache.size();
+        return (int) profileCache.synchronous().estimatedSize();
     }
 
     /**
@@ -81,15 +99,14 @@ public class ProfileManager {
      * @return A future containing the loaded profile.
      */
     public CompletableFuture<Profile> load(UUID uuid, String initialName) {
-        return storage.loadProfile(uuid).thenApply(profile -> {
+        return profileCache.get(uuid, (k, executor) -> storage.loadProfile(uuid).thenApply(profile -> {
             Profile result = (profile != null) ? profile : new Profile(initialName);
-            profileCache.put(uuid, result);
             
             // Broadcast immediately so other servers can see this player/profile
             messaging.publishProfile(EssentialsManager.getInstance().getConfig().getServerId(), uuid, result);
             
             return result;
-        });
+        }));
     }
 
     /**
@@ -98,7 +115,7 @@ public class ProfileManager {
      * @return A future that completes when the save is done.
      */
     public CompletableFuture<Void> save(UUID uuid) {
-        Profile profile = profileCache.get(uuid);
+        Profile profile = profileCache.synchronous().getIfPresent(uuid);
         if (profile == null) {
             return CompletableFuture.completedFuture(null);
         }
@@ -115,9 +132,9 @@ public class ProfileManager {
      */
     public void unload(UUID uuid, boolean save) {
         if (save) {
-            save(uuid).thenRun(() -> profileCache.remove(uuid));
+            save(uuid).thenRun(() -> profileCache.synchronous().invalidate(uuid));
         } else {
-            profileCache.remove(uuid);
+            profileCache.synchronous().invalidate(uuid);
         }
     }
 
@@ -125,9 +142,13 @@ public class ProfileManager {
      * Updates the local cache with an externally provided profile.
      *
      * @param uuid The player UUID.
-     * @param profile The new profile data.
+     * @param incoming The new profile data.
      */
-    public void applySync(UUID uuid, Profile profile) {
-        profileCache.put(uuid, profile);
+    public void applySync(UUID uuid, Profile incoming) {
+        Profile existing = profileCache.synchronous().getIfPresent(uuid);
+        if (existing != null && existing.getRevision() >= incoming.getRevision()) {
+            return; // Ignore older or duplicate updates
+        }
+        profileCache.synchronous().put(uuid, incoming);
     }
 }
