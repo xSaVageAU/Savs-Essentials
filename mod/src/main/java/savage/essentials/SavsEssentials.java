@@ -19,8 +19,8 @@ public class SavsEssentials implements ModInitializer {
 	public void onInitialize() {
 		LOGGER.info("Savs Essentials Implementation is initializing...");
 
-		// Initialize Core Engine with default JSON storage
-		EssentialsManager.getInstance().init("json");
+		// Initialize Core Engine with implementation-specific config
+		EssentialsManager.getInstance().init(new savage.essentials.config.ModEssentialsConfig());
 
 		// Register Commands
 		registerCommands();
