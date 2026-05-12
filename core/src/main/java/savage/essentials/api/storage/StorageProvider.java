@@ -1,7 +1,11 @@
 package savage.essentials.api.storage;
 
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+
+import savage.essentials.api.data.Profile;
+import savage.essentials.api.data.Warp;
 
 /**
  * Interface for storage providers.
@@ -18,5 +22,37 @@ public interface StorageProvider {
      */
     void shutdown();
 
-    // We will add specific methods for homes, warps, etc. as we implement them.
+    /**
+     * Loads a player profile.
+     * @param uuid The UUID of the player.
+     * @return A future containing the profile, or a new profile if none exists.
+     */
+    CompletableFuture<Profile> loadProfile(UUID uuid);
+
+    /**
+     * Saves a player profile.
+     * @param profile The profile to save.
+     * @return A future that completes when the save is done.
+     */
+    CompletableFuture<Void> saveProfile(Profile profile);
+
+    /**
+     * Loads all global warps.
+     * @return A future containing a map of warp names to Warp objects.
+     */
+    CompletableFuture<Map<String, Warp>> loadWarps();
+
+    /**
+     * Saves a global warp.
+     * @param warp The warp to save.
+     * @return A future that completes when the save is done.
+     */
+    CompletableFuture<Void> saveWarp(Warp warp);
+
+    /**
+     * Deletes a global warp.
+     * @param name The name of the warp to delete.
+     * @return A future that completes when the deletion is done.
+     */
+    CompletableFuture<Void> deleteWarp(String name);
 }
