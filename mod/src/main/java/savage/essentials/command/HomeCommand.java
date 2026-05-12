@@ -84,31 +84,32 @@ public class HomeCommand {
             }
 
             profile.setHome(name, loc, EssentialsManager.getInstance().getConfig().getServerId());
-            
-            // Save async and handle collision retry
-            EssentialsManager.getInstance().getProfileManager().save(player.getUUID()).thenAccept(success -> {
-                if (success) {
-                    player.sendSystemMessage(Component.literal("Home '" + name + "' set!"));
-                } else {
-                    // Collision occurred! Fetch the latest and retry.
-                    EssentialsManager.getInstance().getProfileManager().load(player.getUUID(), player.getScoreboardName()).thenAccept(newProfile -> {
-                        newProfile.setHome(name, loc, EssentialsManager.getInstance().getConfig().getServerId());
-                        EssentialsManager.getInstance().getProfileManager().save(player.getUUID()).thenAccept(retrySuccess -> {
-                            if (retrySuccess) {
-                                player.sendSystemMessage(Component.literal("Home '" + name + "' set! (Resolved sync conflict)"));
-                            } else {
-                                player.sendSystemMessage(Component.literal("Failed to save home: Database busy. Please try again."));
-                            }
-                        });
-                    });
-                }
-            });
+            saveHomeWithRetry(player, name, loc, 3);
             
             return 1;
         } catch (Exception e) {
             context.getSource().sendFailure(Component.literal("Error: " + e.getMessage()));
             return 0;
         }
+    }
+
+    private static void saveHomeWithRetry(ServerPlayer player, String homeName, Location loc, int retriesLeft) {
+        EssentialsManager.getInstance().getProfileManager().save(player.getUUID()).thenAccept(success -> {
+            if (success) {
+                if (retriesLeft < 3) {
+                    player.sendSystemMessage(Component.literal("Home '" + homeName + "' set! (Resolved sync conflict)"));
+                } else {
+                    player.sendSystemMessage(Component.literal("Home '" + homeName + "' set!"));
+                }
+            } else if (retriesLeft > 0) {
+                EssentialsManager.getInstance().getProfileManager().load(player.getUUID(), player.getScoreboardName()).thenAccept(newProfile -> {
+                    newProfile.setHome(homeName, loc, EssentialsManager.getInstance().getConfig().getServerId());
+                    saveHomeWithRetry(player, homeName, loc, retriesLeft - 1);
+                });
+            } else {
+                player.sendSystemMessage(Component.literal("Failed to save home: Database busy after max retries."));
+            }
+        });
     }
 
     private static int executeHome(CommandContext<CommandSourceStack> context) {

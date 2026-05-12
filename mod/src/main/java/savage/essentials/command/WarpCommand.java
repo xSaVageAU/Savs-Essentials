@@ -89,18 +89,7 @@ public class WarpCommand {
                 if (success) {
                     player.sendSystemMessage(Component.literal("Warp '" + name + "' set!"));
                 } else {
-                    // Collision occurred! Wait a second and try again with updated revision
-                    manager.loadAll().thenRun(() -> {
-                        Warp existing = manager.getWarp(name);
-                        Warp retryWarp = (existing != null) ? warp.withIncrementedRevision() : warp;
-                        manager.setWarp(retryWarp).thenAccept(retrySuccess -> {
-                            if (retrySuccess) {
-                                player.sendSystemMessage(Component.literal("Warp '" + name + "' set! (Resolved sync conflict)"));
-                            } else {
-                                player.sendSystemMessage(Component.literal("Failed to save warp: Database busy. Please try again."));
-                            }
-                        });
-                    });
+                    setWarpWithRetry(player, name, warp, 3);
                 }
             });
 
@@ -109,6 +98,22 @@ public class WarpCommand {
             context.getSource().sendFailure(Component.literal("Error: " + e.getMessage()));
             return 0;
         }
+    }
+
+    private static void setWarpWithRetry(ServerPlayer player, String warpName, Warp warpToSave, int retriesLeft) {
+        EssentialsManager.getInstance().getWarpManager().loadAll().thenRun(() -> {
+            Warp existing = EssentialsManager.getInstance().getWarpManager().getWarp(warpName);
+            Warp retryWarp = (existing != null) ? warpToSave.withIncrementedRevision() : warpToSave;
+            EssentialsManager.getInstance().getWarpManager().setWarp(retryWarp).thenAccept(retrySuccess -> {
+                if (retrySuccess) {
+                    player.sendSystemMessage(Component.literal("Warp '" + warpName + "' set! (Resolved sync conflict)"));
+                } else if (retriesLeft > 1) {
+                    setWarpWithRetry(player, warpName, warpToSave, retriesLeft - 1);
+                } else {
+                    player.sendSystemMessage(Component.literal("Failed to save warp: Database busy after max retries."));
+                }
+            });
+        });
     }
 
     private static int executeDelWarp(CommandContext<CommandSourceStack> context) {
