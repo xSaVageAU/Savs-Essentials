@@ -35,6 +35,7 @@ public class TeleportManager {
         
         // Snapshot current position to check for movement
         double startX = player.getX();
+        double startY = player.getY();
         double startZ = player.getZ();
 
         ScheduledFuture<?> task = SCHEDULER.schedule(() -> {
@@ -43,9 +44,10 @@ public class TeleportManager {
                 if (player.isRemoved()) return;
 
                 double diffX = Math.abs(player.getX() - startX);
+                double diffY = Math.abs(player.getY() - startY);
                 double diffZ = Math.abs(player.getZ() - startZ);
 
-                if (diffX > 0.5 || diffZ > 0.5) {
+                if (diffX > 0.5 || diffY > 0.5 || diffZ > 0.5) {
                     player.sendSystemMessage(Component.literal("Teleport cancelled due to movement!"));
                 } else {
                     LocationUtil.teleport(player, target);
