@@ -5,12 +5,10 @@ import savage.essentials.api.messaging.EssentialsMessaging;
 import savage.essentials.api.storage.StorageProvider;
 import savage.essentials.core.EssentialsManager;
 
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import com.github.benmanes.caffeine.cache.AsyncCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import java.time.Duration;
 
 /**
  * Manages the lifecycle and caching of player profiles.
@@ -37,7 +35,7 @@ public class ProfileManager {
             if (update.sourceServerId().equals(EssentialsManager.getInstance().getConfig().getServerId())) {
                 return;
             }
-            
+
             if (!ready) {
                 warmupQueue.add(update);
             } else {
@@ -45,7 +43,7 @@ public class ProfileManager {
             }
         });
     }
-    
+
     public void markReady() {
         this.ready = true;
         while (!warmupQueue.isEmpty()) {
@@ -67,6 +65,7 @@ public class ProfileManager {
 
     /**
      * Gets a profile from the local cache.
+     * 
      * @param uuid The player UUID.
      * @return The profile, or null if not loaded.
      */
@@ -76,6 +75,7 @@ public class ProfileManager {
 
     /**
      * Gets a profile from the cache by name (case-insensitive).
+     * 
      * @param name The player name.
      * @return The profile, or null if not found.
      */
@@ -94,22 +94,26 @@ public class ProfileManager {
 
     /**
      * Loads a profile from storage into the local cache.
-     * @param uuid The player UUID.
+     * 
+     * @param uuid        The player UUID.
      * @param initialName The name to use if the profile is new.
      * @return A future containing the loaded profile.
      */
     public CompletableFuture<Profile> load(UUID uuid, String initialName) {
-        return profileCache.get(uuid, (k, executor) -> storage.loadProfile(uuid).thenApply(profile -> 
-            (profile != null) ? profile : new Profile(initialName)
-        )).thenApply(profile -> {
-            // Broadcast immediately so other servers can see this player/profile
-            messaging.publishProfile(EssentialsManager.getInstance().getConfig().getServerId(), uuid, profile);
-            return profile;
-        });
+        return profileCache
+                .get(uuid,
+                        (k, executor) -> storage.loadProfile(uuid)
+                                .thenApply(profile -> (profile != null) ? profile : new Profile(initialName)))
+                .thenApply(profile -> {
+                    // Broadcast immediately so other servers can see this player/profile
+                    messaging.publishProfile(EssentialsManager.getInstance().getConfig().getServerId(), uuid, profile);
+                    return profile;
+                });
     }
 
     /**
      * Saves a profile from the cache to storage and broadcasts the update.
+     * 
      * @param uuid The player UUID.
      * @return A future that completes with true if successful.
      */
@@ -118,7 +122,7 @@ public class ProfileManager {
         if (profile == null) {
             return CompletableFuture.completedFuture(false);
         }
-        
+
         return storage.saveProfile(uuid, profile).thenApply(success -> {
             if (success) {
                 messaging.publishProfile(EssentialsManager.getInstance().getConfig().getServerId(), uuid, profile);
@@ -129,6 +133,7 @@ public class ProfileManager {
 
     /**
      * Unloads a profile from the cache, optionally saving it first.
+     * 
      * @param uuid The player UUID.
      * @param save Whether to save before unloading.
      */
@@ -143,7 +148,7 @@ public class ProfileManager {
     /**
      * Updates the local cache with an externally provided profile.
      *
-     * @param uuid The player UUID.
+     * @param uuid     The player UUID.
      * @param incoming The new profile data.
      */
     public void applySync(UUID uuid, Profile incoming) {

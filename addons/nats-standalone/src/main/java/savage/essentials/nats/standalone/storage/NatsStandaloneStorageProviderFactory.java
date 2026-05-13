@@ -2,7 +2,6 @@ package savage.essentials.nats.standalone.storage;
 
 import savage.essentials.api.storage.StorageEntrypoint;
 import savage.essentials.api.storage.StorageProvider;
-import savage.essentials.nats.standalone.provider.NatsStandaloneProvider;
 
 public class NatsStandaloneStorageProviderFactory implements StorageEntrypoint {
     @Override
@@ -12,6 +11,6 @@ public class NatsStandaloneStorageProviderFactory implements StorageEntrypoint {
 
     @Override
     public StorageProvider createProvider() {
-        return NatsStandaloneProvider.getInstance();
+        return new NatsStorageProvider();
     }
 }

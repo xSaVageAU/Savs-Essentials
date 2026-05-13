@@ -8,7 +8,6 @@ import savage.essentials.core.EssentialsManager;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -44,7 +43,7 @@ public class WarpManager {
             }
         });
     }
-    
+
     public void markReady() {
         this.ready = true;
         while (!warmupQueue.isEmpty()) {
@@ -61,7 +60,7 @@ public class WarpManager {
         } else if (update.warp() != null) {
             Warp incoming = update.warp();
             Warp existing = warps.get(update.warpName().toLowerCase());
-            
+
             if (existing != null && existing.revision() >= incoming.revision()) {
                 return; // Ignore older updates
             }
@@ -95,12 +94,13 @@ public class WarpManager {
 
     /**
      * Creates or updates a warp and broadcasts the change.
+     * 
      * @return A future that completes with true if successful.
      */
     public CompletableFuture<Boolean> setWarp(Warp warp) {
         Warp existing = warps.get(warp.name().toLowerCase());
         Warp toSave = (existing != null) ? warp.withIncrementedRevision() : warp;
-        
+
         warps.put(toSave.name().toLowerCase(), toSave);
         return storage.saveWarp(toSave).thenApply(success -> {
             if (success) {
@@ -112,6 +112,7 @@ public class WarpManager {
 
     /**
      * Deletes a warp and broadcasts the change.
+     * 
      * @return A future that completes with true if successful.
      */
     public CompletableFuture<Boolean> deleteWarp(String name) {

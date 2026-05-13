@@ -2,7 +2,6 @@ package savage.essentials.nats.standalone.messaging;
 
 import savage.essentials.api.messaging.EssentialsMessaging;
 import savage.essentials.api.messaging.MessagingProvider;
-import savage.essentials.nats.standalone.provider.NatsStandaloneProvider;
 
 public class NatsStandaloneMessagingProviderFactory implements MessagingProvider {
     @Override
@@ -12,6 +11,6 @@ public class NatsStandaloneMessagingProviderFactory implements MessagingProvider
 
     @Override
     public EssentialsMessaging create() {
-        return NatsStandaloneProvider.getInstance();
+        return new NatsMessagingProvider();
     }
 }
