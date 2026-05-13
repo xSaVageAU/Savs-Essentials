@@ -95,15 +95,12 @@ public class EssentialsManager {
         this.profileManager.init();
         this.warpManager.init();
 
-        // 5. Pre-load data
-        CompletableFuture.allOf(
-                this.warpManager.loadAll(),
-                this.profileManager.loadAll()).thenRun(() -> {
-                    this.warpManager.markReady();
-                    this.profileManager.markReady();
-                    LOGGER.info("Essentials Engine ready. Loaded {} warps and {} profiles.",
-                            warpManager.getWarps().size(), profileManager.getProfileCount());
-                });
+        // 5. Pre-load data (Warps are lightweight and global, Profiles are lazy-loaded)
+        this.warpManager.loadAll().thenRun(() -> {
+            this.warpManager.markReady();
+            this.profileManager.markReady();
+            LOGGER.info("Essentials Engine ready. Loaded {} warps.", warpManager.getWarps().size());
+        });
     }
 
     public void drain() {

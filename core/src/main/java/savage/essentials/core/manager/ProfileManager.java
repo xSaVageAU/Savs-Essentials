@@ -79,17 +79,6 @@ public class ProfileManager {
         }
     }
 
-    /**
-     * Loads all profiles from storage into the cache.
-     */
-    public CompletableFuture<Void> loadAll() {
-        return storage.loadAllProfiles().thenAccept(profiles -> {
-            profiles.forEach((uuid, profile) -> {
-                profileCache.synchronous().put(uuid, profile);
-                nameToUuid.put(profile.getLastKnownName().toLowerCase(), uuid);
-            });
-        });
-    }
 
     /**
      * Gets a profile from the local cache.

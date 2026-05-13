@@ -36,38 +36,6 @@ public class NatsStorageProvider implements StorageProvider {
         return kv;
     }
 
-    @Override
-    public CompletableFuture<Map<UUID, Profile>> loadAllProfiles() {
-        return CompletableFuture.supplyAsync(() -> {
-            Map<UUID, Profile> profiles = new HashMap<>();
-            CountDownLatch latch = new CountDownLatch(1);
-            try {
-                var sub = getKv().watchAll(new KeyValueWatcher() {
-                    @Override
-                    public void watch(KeyValueEntry entry) {
-                        if (entry.getValue() == null || !entry.getKey().startsWith("profiles.")) return;
-                        try {
-                            NatsKvUtil.ProfileWire wire = NatsKvUtil.parseWire(entry.getValue(), NatsKvUtil.ProfileWire.class);
-                            if (wire != null) profiles.put(UUID.fromString(wire.playerUuid()), wire.profile());
-                        } catch (Exception ignored) {}
-                    }
-
-                    @Override
-                    public void endOfData() {
-                        latch.countDown();
-                    }
-                });
-
-                if (!latch.await(30, TimeUnit.SECONDS)) {
-                    LOGGER.warn("NATS loadAllProfiles timed out waiting for initial data");
-                }
-                sub.close();
-            } catch (Exception e) {
-                LOGGER.error("Failed to stream all profiles from NATS: {}", e.getMessage());
-            }
-            return profiles;
-        });
-    }
 
     @Override
     public CompletableFuture<Profile> loadProfile(UUID uuid) {

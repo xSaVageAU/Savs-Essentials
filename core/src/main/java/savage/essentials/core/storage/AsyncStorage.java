@@ -36,17 +36,6 @@ public class AsyncStorage implements StorageProvider {
         delegate.init();
     }
 
-    @Override
-    public CompletableFuture<Map<UUID, Profile>> loadAllProfiles() {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                return delegate.loadAllProfiles().join();
-            } catch (Exception e) {
-                LOGGER.error("Async loadAllProfiles failed", e);
-                return Map.of();
-            }
-        }, ioExecutor);
-    }
 
     @Override
     public CompletableFuture<Profile> loadProfile(UUID uuid) {

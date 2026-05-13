@@ -29,11 +29,6 @@ public interface StorageProvider {
      */
     void shutdown();
 
-    /**
-     * Loads all player profiles from storage.
-     * @return A future containing a map of UUIDs to profiles.
-     */
-    CompletableFuture<Map<UUID, Profile>> loadAllProfiles();
 
     /**
      * Loads a player profile.
