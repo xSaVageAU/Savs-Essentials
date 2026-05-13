@@ -1,8 +1,9 @@
 package savage.essentials.nats.standalone.provider;
 
 import com.github.luben.zstd.Zstd;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import io.nats.client.Connection;
 import io.nats.client.KeyValue;
 import io.nats.client.api.KeyValueConfiguration;
@@ -12,12 +13,10 @@ import savage.essentials.api.data.Profile;
 import savage.essentials.api.data.Warp;
 import savage.essentials.nats.standalone.NatsConfig;
 
-
-import java.nio.charset.StandardCharsets;
-
 public class NatsKvUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger("savs-essentials-nats-standalone");
-    private static final Gson GSON = new GsonBuilder().create();
+    private static final ObjectMapper CBOR = new CBORMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private static KeyValue kvInstance;
 
     public static synchronized KeyValue getKv() {
@@ -65,7 +64,7 @@ public class NatsKvUtil {
     public static <T> T parseWire(byte[] data, Class<T> clazz) throws Exception {
         if (data == null) return null;
         byte[] decompressed = decompress(data);
-        return GSON.fromJson(new String(decompressed, StandardCharsets.UTF_8), clazz);
+        return CBOR.readValue(decompressed, clazz);
     }
 
     public static <T> T readFromKv(KeyValue kv, String key, Class<T> clazz) {
@@ -79,7 +78,8 @@ public class NatsKvUtil {
     }
 
     public static void writeToKv(KeyValue kv, String key, Object data) throws Exception {
-        byte[] compressed = compress(GSON.toJson(data).getBytes(StandardCharsets.UTF_8));
+        byte[] cborBytes = CBOR.writeValueAsBytes(data);
+        byte[] compressed = compress(cborBytes);
         kv.put(key, compressed);
     }
 

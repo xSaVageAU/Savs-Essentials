@@ -20,4 +20,10 @@ dependencies {
     
     // Zstd compression
     include(implementation("com.github.luben:zstd-jni:1.5.7-1"))
+    
+    // Jackson CBOR for efficient serialization (must explicitly include transitive dependencies in Fabric)
+    include(implementation("com.fasterxml.jackson.core:jackson-core:2.18.2"))
+    include(implementation("com.fasterxml.jackson.core:jackson-annotations:2.18.2"))
+    include(implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2"))
+    include(implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.18.2"))
 }
