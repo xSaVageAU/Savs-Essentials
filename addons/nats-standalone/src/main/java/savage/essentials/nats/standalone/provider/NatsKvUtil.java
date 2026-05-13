@@ -42,6 +42,9 @@ public class NatsKvUtil {
 
     public static byte[] decompress(byte[] compressedData) {
         long size = Zstd.getFrameContentSize(compressedData);
+        if (size < 0) {
+            throw new RuntimeException("Failed to decompress NATS payload: Invalid or unknown Zstd frame size (" + size + ")");
+        }
         return Zstd.decompress(compressedData, (int) size);
     }
 
