@@ -49,12 +49,13 @@ public class NatsConnection {
         return connection;
     }
 
-    public static void close() {
+    public static synchronized void close() {
         if (connection != null) {
             try {
                 connection.close();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
+                LOGGER.error("NATS connection close interrupted", e);
             }
             connection = null;
         }
