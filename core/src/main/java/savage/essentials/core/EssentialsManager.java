@@ -89,6 +89,7 @@ public class EssentialsManager {
         this.profileManager = new ProfileManager(storage, messaging);
         this.warpManager = new WarpManager(storage, messaging);
         this.teleportManager = new TeleportManager();
+        this.teleportManager.init();
 
         // Initialize synchronization listeners
         this.profileManager.init();

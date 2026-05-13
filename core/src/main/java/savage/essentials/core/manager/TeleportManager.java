@@ -1,5 +1,6 @@
 package savage.essentials.core.manager;
 
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import savage.essentials.api.data.Location;
@@ -16,6 +17,17 @@ import java.util.concurrent.*;
 public class TeleportManager {
     private static final ScheduledExecutorService SCHEDULER = Executors.newSingleThreadScheduledExecutor();
     private final Map<UUID, ScheduledFuture<?>> pendingTeleports = new ConcurrentHashMap<>();
+
+    public void init() {
+        ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+            if (entity instanceof ServerPlayer player) {
+                if (cancelPending(player.getUUID())) {
+                    player.sendSystemMessage(Component.literal("Teleport cancelled because you took damage!"));
+                }
+            }
+            return true;
+        });
+    }
 
     /**
      * Requests a teleport with a delay specified in the core config.
@@ -60,11 +72,13 @@ public class TeleportManager {
         pendingTeleports.put(player.getUUID(), task);
     }
 
-    public void cancelPending(UUID uuid) {
+    public boolean cancelPending(UUID uuid) {
         ScheduledFuture<?> task = pendingTeleports.remove(uuid);
         if (task != null && !task.isDone()) {
             task.cancel(false);
+            return true;
         }
+        return false;
     }
 
     public void shutdown() {

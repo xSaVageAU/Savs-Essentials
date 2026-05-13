@@ -1,9 +1,9 @@
 package savage.essentials.api.data;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Represents a player profile containing all player-specific data.
@@ -12,9 +12,9 @@ public class Profile {
     private String lastKnownName;
     private long joinedDate;
     private long revision = 0;
-    private final List<String> previousNames = new ArrayList<>();
-    private final Map<String, Home> homes = new HashMap<>();
-    private final Map<String, String> metadata = new HashMap<>();
+    private final List<String> previousNames = new CopyOnWriteArrayList<>();
+    private final Map<String, Home> homes = new ConcurrentHashMap<>();
+    private final Map<String, String> metadata = new ConcurrentHashMap<>();
 
     public Profile(String lastKnownName) {
         this(lastKnownName, System.currentTimeMillis());
