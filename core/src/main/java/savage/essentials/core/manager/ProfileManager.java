@@ -1,14 +1,19 @@
 package savage.essentials.core.manager;
 
+import com.github.benmanes.caffeine.cache.AsyncCache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import savage.essentials.api.data.Profile;
 import savage.essentials.api.messaging.EssentialsMessaging;
+import savage.essentials.api.messaging.EssentialsMessaging.ProfileUpdate;
 import savage.essentials.api.storage.StorageProvider;
 import savage.essentials.core.EssentialsManager;
 
+import java.util.Map;
+import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import com.github.benmanes.caffeine.cache.AsyncCache;
-import com.github.benmanes.caffeine.cache.Caffeine;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Manages the lifecycle and caching of player profiles.
@@ -17,8 +22,8 @@ public class ProfileManager {
     private final StorageProvider storage;
     private final EssentialsMessaging messaging;
     private final AsyncCache<UUID, Profile> profileCache;
-    private final java.util.Map<String, UUID> nameToUuid = new java.util.concurrent.ConcurrentHashMap<>();
-    private final java.util.Queue<savage.essentials.api.messaging.EssentialsMessaging.ProfileUpdate> warmupQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    private final Map<String, UUID> nameToUuid = new ConcurrentHashMap<>();
+    private final Queue<ProfileUpdate> warmupQueue = new ConcurrentLinkedQueue<>();
     private volatile boolean ready = false;
 
     public ProfileManager(StorageProvider storage, EssentialsMessaging messaging) {

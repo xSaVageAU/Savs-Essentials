@@ -8,8 +8,11 @@ import savage.essentials.core.EssentialsManager;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import savage.essentials.api.messaging.EssentialsMessaging.WarpUpdate;
 
 /**
  * Manages global warps and their persistence.
@@ -18,7 +21,7 @@ public class WarpManager {
     private final StorageProvider storage;
     private final EssentialsMessaging messaging;
     private final Map<String, Warp> warps = new ConcurrentHashMap<>();
-    private final java.util.Queue<savage.essentials.api.messaging.EssentialsMessaging.WarpUpdate> warmupQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    private final Queue<WarpUpdate> warmupQueue = new ConcurrentLinkedQueue<>();
     private volatile boolean ready = false;
 
     public WarpManager(StorageProvider storage, EssentialsMessaging messaging) {
@@ -54,7 +57,7 @@ public class WarpManager {
         }
     }
 
-    private void applySync(savage.essentials.api.messaging.EssentialsMessaging.WarpUpdate update) {
+    private void applySync(WarpUpdate update) {
         if (update.deleted()) {
             warps.remove(update.warpName().toLowerCase());
         } else if (update.warp() != null) {
