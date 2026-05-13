@@ -136,6 +136,32 @@ public class NatsStorageProvider implements StorageProvider {
     }
 
     @Override
+    public CompletableFuture<UUID> lookupUuidByName(String name) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                KeyValueEntry entry = getKv().get("names." + name.toLowerCase());
+                if (entry != null && entry.getValue() != null) {
+                    return UUID.fromString(entry.getValueAsString());
+                }
+            } catch (Exception e) {
+                LOGGER.error("Failed to lookup UUID for name {}", name, e);
+            }
+            return null;
+        });
+    }
+
+    @Override
+    public CompletableFuture<Void> saveNameLookup(String name, UUID uuid) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                getKv().put("names." + name.toLowerCase(), uuid.toString());
+            } catch (Exception e) {
+                LOGGER.error("Failed to save name lookup for {}", name, e);
+            }
+        });
+    }
+
+    @Override
     public void shutdown() {
         // Shared connection is closed centrally if needed, or handled by the NATS addon shutdown.
     }

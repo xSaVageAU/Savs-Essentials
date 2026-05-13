@@ -43,25 +43,26 @@ public class PlayerInfoCommand {
         CommandSourceStack source = context.getSource();
         
         ProfileManager pm = EssentialsManager.getInstance().getProfileManager();
-        Profile profile = pm.getProfileByName(playerName);
+        pm.getProfileByName(playerName).thenAccept(profile -> {
+            if (profile == null) {
+                source.sendFailure(Component.literal("No profile found for player '" + playerName + "'."));
+                return;
+            }
 
-        if (profile == null) {
-            source.sendFailure(Component.literal("No profile found for player '" + playerName + "'."));
-            return 0;
-        }
+            MutableComponent message = Component.literal("\n--- Player Info: " + profile.getLastKnownName() + " ---").withStyle(ChatFormatting.GOLD)
+                    .append(line("Last Name", profile.getLastKnownName()))
+                    .append(line("Joined", DATE_FORMAT.format(Instant.ofEpochMilli(profile.getJoinedDate()))))
+                    .append(line("Homes", String.valueOf(profile.getHomes().size())));
 
-        MutableComponent message = Component.literal("\n--- Player Info: " + profile.getLastKnownName() + " ---").withStyle(ChatFormatting.GOLD)
-                .append(line("Last Name", profile.getLastKnownName()))
-                .append(line("Joined", DATE_FORMAT.format(Instant.ofEpochMilli(profile.getJoinedDate()))))
-                .append(line("Homes", String.valueOf(profile.getHomes().size())));
+            if (!profile.getPreviousNames().isEmpty()) {
+                message.append(line("Aliases", String.join(", ", profile.getPreviousNames())));
+            }
 
-        if (!profile.getPreviousNames().isEmpty()) {
-            message.append(line("Aliases", String.join(", ", profile.getPreviousNames())));
-        }
+            message.append(Component.literal("\n----------------------------").withStyle(ChatFormatting.GOLD));
 
-        message.append(Component.literal("\n----------------------------").withStyle(ChatFormatting.GOLD));
+            source.sendSuccess(() -> message, false);
+        });
 
-        source.sendSuccess(() -> message, false);
         return 1;
     }
 

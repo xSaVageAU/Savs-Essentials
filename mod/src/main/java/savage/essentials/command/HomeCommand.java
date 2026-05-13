@@ -146,20 +146,20 @@ public class HomeCommand {
     private static int executeHomeOther(CommandContext<CommandSourceStack> context, String name, String targetPlayer) {
         try {
             ServerPlayer player = context.getSource().getPlayerOrException();
-            Profile profile = EssentialsManager.getInstance().getProfileManager().getProfileByName(targetPlayer);
-            
-            if (profile == null) {
-                context.getSource().sendFailure(Component.literal("Player '" + targetPlayer + "' not found!"));
-                return 0;
-            }
+            EssentialsManager.getInstance().getProfileManager().getProfileByName(targetPlayer).thenAccept(profile -> {
+                if (profile == null) {
+                    context.getSource().sendFailure(Component.literal("Player '" + targetPlayer + "' not found!"));
+                    return;
+                }
 
-            if (!profile.getHomes().containsKey(name.toLowerCase())) {
-                context.getSource().sendFailure(Component.literal("Player '" + targetPlayer + "' does not have a home named '" + name + "'!"));
-                return 0;
-            }
+                if (!profile.getHomes().containsKey(name.toLowerCase())) {
+                    context.getSource().sendFailure(Component.literal("Player '" + targetPlayer + "' does not have a home named '" + name + "'!"));
+                    return;
+                }
 
-            Location loc = profile.getHomes().get(name.toLowerCase()).location();
-            EssentialsManager.getInstance().getTeleportManager().requestTeleport(player, loc);
+                Location loc = profile.getHomes().get(name.toLowerCase()).location();
+                EssentialsManager.getInstance().getTeleportManager().requestTeleport(player, loc);
+            });
             
             return 1;
         } catch (Exception e) {
@@ -217,48 +217,48 @@ public class HomeCommand {
 
     private static int executeListHomesOther(CommandContext<CommandSourceStack> context, String targetPlayer) {
         try {
-            Profile profile = EssentialsManager.getInstance().getProfileManager().getProfileByName(targetPlayer);
-
-            if (profile == null) {
-                context.getSource().sendFailure(Component.literal("Player '" + targetPlayer + "' not found."));
-                return 0;
-            }
-
-            if (profile.getHomes().isEmpty()) {
-                context.getSource().sendSuccess(() -> Component.literal("Player '" + targetPlayer + "' has no homes set."), false);
-                return 1;
-            }
-
-            MutableComponent message = Component.literal(targetPlayer + "'s Homes: ").withStyle(ChatFormatting.GOLD);
-            
-            boolean first = true;
-            for (String homeName : profile.getHomes().keySet()) {
-                if (!first) {
-                    message.append(Component.literal(", ").withStyle(ChatFormatting.GRAY));
+            EssentialsManager.getInstance().getProfileManager().getProfileByName(targetPlayer).thenAccept(profile -> {
+                if (profile == null) {
+                    context.getSource().sendFailure(Component.literal("Player '" + targetPlayer + "' not found."));
+                    return;
                 }
+
+                if (profile.getHomes().isEmpty()) {
+                    context.getSource().sendSuccess(() -> Component.literal("Player '" + targetPlayer + "' has no homes set."), false);
+                    return;
+                }
+
+                MutableComponent message = Component.literal(targetPlayer + "'s Homes: ").withStyle(ChatFormatting.GOLD);
                 
-                savage.essentials.api.data.Home homeData = profile.getHomes().get(homeName);
-                MutableComponent hoverText = Component.literal("Click to teleport to ").withStyle(ChatFormatting.GREEN)
-                        .append(Component.literal(targetPlayer + "'s " + homeName).withStyle(ChatFormatting.WHITE));
+                boolean first = true;
+                for (String homeName : profile.getHomes().keySet()) {
+                    if (!first) {
+                        message.append(Component.literal(", ").withStyle(ChatFormatting.GRAY));
+                    }
+                    
+                    savage.essentials.api.data.Home homeData = profile.getHomes().get(homeName);
+                    MutableComponent hoverText = Component.literal("Click to teleport to ").withStyle(ChatFormatting.GREEN)
+                            .append(Component.literal(targetPlayer + "'s " + homeName).withStyle(ChatFormatting.WHITE));
 
-                if (EssentialsManager.getInstance().getStorage().requiresServerId() || 
-                    EssentialsManager.getInstance().getMessaging().requiresServerId()) {
-                    hoverText.append(Component.literal("\nServer: ").withStyle(ChatFormatting.GRAY))
-                             .append(Component.literal(homeData.serverId()).withStyle(ChatFormatting.GOLD));
+                    if (EssentialsManager.getInstance().getStorage().requiresServerId() || 
+                        EssentialsManager.getInstance().getMessaging().requiresServerId()) {
+                        hoverText.append(Component.literal("\nServer: ").withStyle(ChatFormatting.GRAY))
+                                 .append(Component.literal(homeData.serverId()).withStyle(ChatFormatting.GOLD));
+                    }
+
+                    hoverText.append(Component.literal("\nDimension: ").withStyle(ChatFormatting.GRAY))
+                            .append(Component.literal(homeData.location().dimension()).withStyle(ChatFormatting.GOLD));
+
+                    message.append(Component.literal(homeName)
+                            .withStyle(style -> style
+                                    .withColor(ChatFormatting.WHITE)
+                                    .withHoverEvent(new HoverEvent.ShowText(hoverText))
+                                    .withClickEvent(new ClickEvent.RunCommand("/home " + homeName + " " + targetPlayer))));
+                    first = false;
                 }
 
-                hoverText.append(Component.literal("\nDimension: ").withStyle(ChatFormatting.GRAY))
-                        .append(Component.literal(homeData.location().dimension()).withStyle(ChatFormatting.GOLD));
-
-                message.append(Component.literal(homeName)
-                        .withStyle(style -> style
-                                .withColor(ChatFormatting.WHITE)
-                                .withHoverEvent(new HoverEvent.ShowText(hoverText))
-                                .withClickEvent(new ClickEvent.RunCommand("/home " + homeName + " " + targetPlayer))));
-                first = false;
-            }
-
-            context.getSource().sendSuccess(() -> message, false);
+                context.getSource().sendSuccess(() -> message, false);
+            });
             return 1;
         } catch (Exception e) {
             context.getSource().sendFailure(Component.literal("Error: " + e.getMessage()));

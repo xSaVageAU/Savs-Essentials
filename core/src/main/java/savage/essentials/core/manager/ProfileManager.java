@@ -92,27 +92,25 @@ public class ProfileManager {
 
     /**
      * Gets a profile from the cache by name (case-insensitive).
+     * If not in cache, attempts an offline lookup via the storage provider.
      * 
      * @param name The player name.
-     * @return The profile, or null if not found.
+     * @return A future containing the profile, or null if not found.
      */
-    public Profile getProfileByName(String name) {
+    public CompletableFuture<Profile> getProfileByName(String name) {
         UUID uuid = nameToUuid.get(name.toLowerCase());
-        if (uuid == null) return null;
-        
-        Profile profile = getProfile(uuid);
-        if (profile != null && profile.getLastKnownName().equalsIgnoreCase(name)) {
-            return profile;
-        }
-        
-        // Fallback: If index is stale or null, do a quick scan (rare)
-        for (var entry : profileCache.synchronous().asMap().entrySet()) {
-            if (entry.getValue().getLastKnownName().equalsIgnoreCase(name)) {
-                nameToUuid.put(name.toLowerCase(), entry.getKey()); // Fix index
-                return entry.getValue();
+        if (uuid != null) {
+            Profile profile = getProfile(uuid);
+            if (profile != null && profile.getLastKnownName().equalsIgnoreCase(name)) {
+                return CompletableFuture.completedFuture(profile);
             }
         }
-        return null;
+        
+        // Fallback: Offline lookup using the storage provider
+        return storage.lookupUuidByName(name).thenCompose(foundUuid -> {
+            if (foundUuid == null) return CompletableFuture.completedFuture(null);
+            return load(foundUuid, name); // Load it into cache on demand
+        });
     }
 
     public int getProfileCount() {
@@ -135,6 +133,7 @@ public class ProfileManager {
                     // Broadcast immediately so other servers can see this player/profile
                     messaging.publishProfile(EssentialsManager.getInstance().getConfig().getServerId(), uuid, profile);
                     nameToUuid.put(profile.getLastKnownName().toLowerCase(), uuid);
+                    storage.saveNameLookup(profile.getLastKnownName(), uuid);
                     return profile;
                 });
     }
@@ -154,6 +153,7 @@ public class ProfileManager {
         return storage.saveProfile(uuid, profile).thenApply(success -> {
             if (success) {
                 messaging.publishProfile(EssentialsManager.getInstance().getConfig().getServerId(), uuid, profile);
+                storage.saveNameLookup(profile.getLastKnownName(), uuid);
             }
             return success;
         });

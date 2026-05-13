@@ -64,4 +64,18 @@ public interface StorageProvider {
      * @return A future that completes with true if successful, false if rejected.
      */
     CompletableFuture<Boolean> deleteWarp(String name);
+    /**
+     * Looks up a player's UUID by their name.
+     * @param name The name to look up.
+     * @return A future containing the UUID, or null if not found.
+     */
+    CompletableFuture<UUID> lookupUuidByName(String name);
+
+    /**
+     * Saves a name to UUID mapping.
+     * @param name The player's name.
+     * @param uuid The player's UUID.
+     * @return A future that completes when the save is finished.
+     */
+    CompletableFuture<Void> saveNameLookup(String name, UUID uuid);
 }

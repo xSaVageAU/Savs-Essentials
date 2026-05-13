@@ -24,11 +24,13 @@ public class JsonStorageProvider implements StorageProvider {
     private final Path baseDir;
     private final Path profileDir;
     private final Path warpDir;
+    private final Path usermapPath;
 
     public JsonStorageProvider() {
         this.baseDir = FabricLoader.getInstance().getConfigDir().resolve("savs-essentials");
         this.profileDir = baseDir.resolve("profiles");
         this.warpDir = baseDir.resolve("warps");
+        this.usermapPath = baseDir.resolve("usermap.json");
     }
 
     @Override
@@ -120,6 +122,39 @@ public class JsonStorageProvider implements StorageProvider {
             return CompletableFuture.completedFuture(false);
         }
         return CompletableFuture.completedFuture(true);
+    }
+
+    @Override
+    public CompletableFuture<UUID> lookupUuidByName(String name) {
+        if (!Files.exists(usermapPath)) return CompletableFuture.completedFuture(null);
+        try (var reader = Files.newBufferedReader(usermapPath)) {
+            java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<Map<String, String>>(){}.getType();
+            Map<String, String> map = GSON.fromJson(reader, type);
+            if (map != null) {
+                String uuidStr = map.get(name.toLowerCase());
+                if (uuidStr != null) return CompletableFuture.completedFuture(UUID.fromString(uuidStr));
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to lookup UUID from usermap", e);
+        }
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public CompletableFuture<Void> saveNameLookup(String name, UUID uuid) {
+        Map<String, String> map = new HashMap<>();
+        if (Files.exists(usermapPath)) {
+            try (var reader = Files.newBufferedReader(usermapPath)) {
+                java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<Map<String, String>>(){}.getType();
+                Map<String, String> existing = GSON.fromJson(reader, type);
+                if (existing != null) map.putAll(existing);
+            } catch (Exception e) {
+                LOGGER.error("Failed to read usermap for update", e);
+            }
+        }
+        map.put(name.toLowerCase(), uuid.toString());
+        saveAtomic(usermapPath, map);
+        return CompletableFuture.completedFuture(null);
     }
 
     private void saveAtomic(Path path, Object data) {

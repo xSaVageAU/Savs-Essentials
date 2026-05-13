@@ -163,6 +163,29 @@ public class AsyncStorage implements StorageProvider {
     }
 
     @Override
+    public CompletableFuture<UUID> lookupUuidByName(String name) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return delegate.lookupUuidByName(name).join();
+            } catch (Exception e) {
+                LOGGER.error("Async lookupUuidByName failed for {}", name, e);
+                return null;
+            }
+        }, ioExecutor);
+    }
+
+    @Override
+    public CompletableFuture<Void> saveNameLookup(String name, UUID uuid) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                delegate.saveNameLookup(name, uuid).join();
+            } catch (Exception e) {
+                LOGGER.error("Async saveNameLookup failed for {}", name, e);
+            }
+        }, ioExecutor);
+    }
+
+    @Override
     public void shutdown() {
         int pendingCount = pendingProfileOperations.size() + pendingWarpOperations.size();
         if (pendingCount > 0) {
