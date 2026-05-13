@@ -36,11 +36,4 @@ public interface EssentialsCoreConfig {
     default int getTeleportDelaySeconds() {
         return 0;
     }
-
-    /**
-     * @return The prefix used for all system messages.
-     */
-    default String getMessagePrefix() {
-        return "&8[&6Essentials&8] &r";
-    }
 }

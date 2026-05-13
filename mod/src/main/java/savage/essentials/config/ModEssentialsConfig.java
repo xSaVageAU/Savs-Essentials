@@ -11,8 +11,7 @@ public class ModEssentialsConfig implements EssentialsCoreConfig {
     private UUID serverId = UUID.randomUUID();
     private int defaultMaxHomes = 10;
     private int teleportDelaySeconds = 3;
-    private String messagePrefix = "&8[&6Essentials&8] &r";
-
+    
     @Override
     public String getStorageType() {
         return storageType;
@@ -36,10 +35,5 @@ public class ModEssentialsConfig implements EssentialsCoreConfig {
     @Override
     public int getTeleportDelaySeconds() {
         return teleportDelaySeconds;
-    }
-
-    @Override
-    public String getMessagePrefix() {
-        return messagePrefix;
     }
 }
