@@ -79,7 +79,8 @@ public class NatsMessagingProvider implements EssentialsMessaging {
     @Override
     public void publishWarpDelete(UUID sourceServerId, String warpName) {
         try {
-            NatsKvUtil.writeToKv(kv, "warps." + warpName.toLowerCase(), new NatsKvUtil.WarpWire(sourceServerId.toString(), warpName, null, true));
+            // In standalone mode, kv.delete() acts as the broadcast signal (tombstone).
+            // We don't need to write a "deleted" wire object first as it causes a race/double-event.
             kv.delete("warps." + warpName.toLowerCase());
         } catch (Exception e) {
             LOGGER.error("Failed to publish warp delete {}", warpName, e);
