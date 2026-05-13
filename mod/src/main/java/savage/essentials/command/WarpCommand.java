@@ -103,7 +103,11 @@ public class WarpCommand {
     private static void setWarpWithRetry(ServerPlayer player, String warpName, Warp warpToSave, int retriesLeft) {
         EssentialsManager.getInstance().getWarpManager().loadAll().thenRun(() -> {
             Warp existing = EssentialsManager.getInstance().getWarpManager().getWarp(warpName);
-            Warp retryWarp = (existing != null) ? warpToSave.withIncrementedRevision() : warpToSave;
+            
+            // Fix: The new revision must be higher than the current existing one in NATS
+            long nextRevision = (existing != null) ? existing.revision() + 1 : System.currentTimeMillis();
+            Warp retryWarp = new Warp(warpName, warpToSave.location(), warpToSave.serverId(), nextRevision);
+            
             EssentialsManager.getInstance().getWarpManager().setWarp(retryWarp).thenAccept(retrySuccess -> {
                 if (retrySuccess) {
                     player.sendSystemMessage(Component.literal("Warp '" + warpName + "' set! (Resolved sync conflict)"));

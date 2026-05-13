@@ -103,6 +103,13 @@ public class HomeCommand {
                 }
             } else if (retriesLeft > 0) {
                 EssentialsManager.getInstance().getProfileManager().load(player.getUUID(), player.getScoreboardName()).thenAccept(newProfile -> {
+                    // Re-validate limits against the fresh data
+                    int maxHomes = EssentialsManager.getInstance().getConfig().getDefaultMaxHomes();
+                    if (!newProfile.getHomes().containsKey(homeName.toLowerCase()) && newProfile.getHomes().size() >= maxHomes) {
+                        player.sendSystemMessage(Component.literal("Failed to save home: You reached your limit of " + maxHomes + " homes."));
+                        return;
+                    }
+
                     newProfile.setHome(homeName, loc, EssentialsManager.getInstance().getConfig().getServerId());
                     saveHomeWithRetry(player, homeName, loc, retriesLeft - 1);
                 });
