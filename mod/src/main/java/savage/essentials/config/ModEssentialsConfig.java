@@ -10,6 +10,8 @@ public class ModEssentialsConfig implements EssentialsCoreConfig {
     private String serverId = "";
     private int defaultMaxHomes = 10;
     private int teleportDelaySeconds = 3;
+    private int profileCacheTtlMinutes = 60;
+    private int profileCacheMaxSize = 10000;
     
     @Override
     public String getStorageType() {
@@ -34,5 +36,15 @@ public class ModEssentialsConfig implements EssentialsCoreConfig {
     @Override
     public int getTeleportDelaySeconds() {
         return teleportDelaySeconds;
+    }
+
+    @Override
+    public int getProfileCacheTtlMinutes() {
+        return profileCacheTtlMinutes;
+    }
+
+    @Override
+    public int getProfileCacheMaxSize() {
+        return profileCacheMaxSize;
     }
 }

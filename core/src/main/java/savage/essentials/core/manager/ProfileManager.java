@@ -29,7 +29,26 @@ public class ProfileManager {
     public ProfileManager(StorageProvider storage, EssentialsMessaging messaging) {
         this.storage = storage;
         this.messaging = messaging;
-        this.profileCache = Caffeine.newBuilder().buildAsync();
+        
+        Caffeine<Object, Object> builder = Caffeine.newBuilder();
+        
+        int ttl = EssentialsManager.getInstance().getConfig().getProfileCacheTtlMinutes();
+        if (ttl > 0) {
+            builder.expireAfterAccess(java.time.Duration.ofMinutes(ttl));
+        }
+        
+        int maxSize = EssentialsManager.getInstance().getConfig().getProfileCacheMaxSize();
+        if (maxSize > 0) {
+            builder.maximumSize(maxSize);
+        }
+        
+        builder.removalListener((key, value, cause) -> {
+            if (cause.wasEvicted() && key != null && value != null) {
+                storage.saveProfile((UUID) key, (Profile) value);
+            }
+        });
+        
+        this.profileCache = builder.buildAsync();
     }
 
     /**

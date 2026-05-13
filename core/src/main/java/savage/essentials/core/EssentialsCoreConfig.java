@@ -34,4 +34,20 @@ public interface EssentialsCoreConfig {
     default int getTeleportDelaySeconds() {
         return 0;
     }
+
+    /**
+     * @return The Time-To-Live (TTL) in minutes for cached profiles.
+     *         A value <= 0 indicates no eviction based on time.
+     */
+    default int getProfileCacheTtlMinutes() {
+        return 0;
+    }
+
+    /**
+     * @return The maximum number of profiles to keep in memory.
+     *         A value <= 0 indicates unbounded size.
+     */
+    default int getProfileCacheMaxSize() {
+        return 0;
+    }
 }
