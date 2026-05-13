@@ -9,14 +9,13 @@ import savage.essentials.core.util.LocationUtil;
 
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages delayed teleports and cancellation logic.
+ * Manages delayed teleports and cancellation logic using modern Virtual Threads.
  */
 public class TeleportManager {
-    private static final ScheduledExecutorService SCHEDULER = Executors.newSingleThreadScheduledExecutor();
-    private final Map<UUID, ScheduledFuture<?>> pendingTeleports = new ConcurrentHashMap<>();
+    private final Map<UUID, Thread> pendingTeleports = new ConcurrentHashMap<>();
 
     public void init() {
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
@@ -50,38 +49,50 @@ public class TeleportManager {
         double startY = player.getY();
         double startZ = player.getZ();
 
-        ScheduledFuture<?> task = SCHEDULER.schedule(() -> {
-            EssentialsManager.getMinecraftServer().execute(() -> {
-                // Check if player is still online and hasn't moved too much
-                if (player.isRemoved()) return;
+        Thread task = Thread.startVirtualThread(() -> {
+            try {
+                Thread.sleep(delay * 1000L);
+                
+                EssentialsManager.getMinecraftServer().execute(() -> {
+                    // Check if player is still online and hasn't moved too much
+                    if (player.isRemoved()) return;
 
-                double diffX = Math.abs(player.getX() - startX);
-                double diffY = Math.abs(player.getY() - startY);
-                double diffZ = Math.abs(player.getZ() - startZ);
+                    double diffX = Math.abs(player.getX() - startX);
+                    double diffY = Math.abs(player.getY() - startY);
+                    double diffZ = Math.abs(player.getZ() - startZ);
 
-                if (diffX > 0.5 || diffY > 0.5 || diffZ > 0.5) {
-                    player.sendSystemMessage(Component.literal("Teleport cancelled due to movement!"));
-                } else {
-                    LocationUtil.teleport(player, target);
-                    player.sendSystemMessage(Component.literal("Teleported!"));
-                }
-                pendingTeleports.remove(player.getUUID());
-            });
-        }, delay, TimeUnit.SECONDS);
+                    if (diffX > 0.5 || diffY > 0.5 || diffZ > 0.5) {
+                        player.sendSystemMessage(Component.literal("Teleport cancelled due to movement!"));
+                    } else {
+                        LocationUtil.teleport(player, target);
+                        player.sendSystemMessage(Component.literal("Teleported!"));
+                    }
+                    pendingTeleports.remove(player.getUUID());
+                });
+            } catch (InterruptedException e) {
+                // Thread was interrupted (cancelled), so we just exit silently
+            }
+        });
 
         pendingTeleports.put(player.getUUID(), task);
     }
 
     public boolean cancelPending(UUID uuid) {
-        ScheduledFuture<?> task = pendingTeleports.remove(uuid);
-        if (task != null && !task.isDone()) {
-            task.cancel(false);
+        Thread task = pendingTeleports.remove(uuid);
+        if (task != null && task.isAlive()) {
+            task.interrupt();
             return true;
         }
         return false;
     }
 
     public void shutdown() {
-        SCHEDULER.shutdown();
+        // Interrupt all active teleport countdowns on shutdown
+        for (Thread thread : pendingTeleports.values()) {
+            if (thread.isAlive()) {
+                thread.interrupt();
+            }
+        }
+        pendingTeleports.clear();
     }
 }

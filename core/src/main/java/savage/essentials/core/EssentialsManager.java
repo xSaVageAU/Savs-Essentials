@@ -125,6 +125,9 @@ public class EssentialsManager {
         if (storage != null) {
             storage.shutdown();
         }
+        if (teleportManager != null) {
+            teleportManager.shutdown();
+        }
     }
 
     public ProfileManager getProfileManager() {
