@@ -16,12 +16,14 @@ import savage.essentials.api.data.Profile;
 import savage.essentials.core.EssentialsManager;
 import savage.essentials.core.manager.ProfileManager;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
 
 public class PlayerInfoCommand {
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            .withZone(ZoneId.systemDefault());
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("playerinfo")
@@ -50,7 +52,7 @@ public class PlayerInfoCommand {
 
         MutableComponent message = Component.literal("\n--- Player Info: " + profile.getLastKnownName() + " ---").withStyle(ChatFormatting.GOLD)
                 .append(line("Last Name", profile.getLastKnownName()))
-                .append(line("Joined", DATE_FORMAT.format(new Date(profile.getJoinedDate()))))
+                .append(line("Joined", DATE_FORMAT.format(Instant.ofEpochMilli(profile.getJoinedDate()))))
                 .append(line("Homes", String.valueOf(profile.getHomes().size())));
 
         if (!profile.getPreviousNames().isEmpty()) {
