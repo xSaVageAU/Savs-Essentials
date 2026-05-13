@@ -188,10 +188,15 @@ public class HomeCommand {
                 
                 savage.essentials.api.data.Home homeData = profile.getHomes().get(homeName);
                 MutableComponent hoverText = Component.literal("Click to teleport to ").withStyle(ChatFormatting.GREEN)
-                        .append(Component.literal(homeName).withStyle(ChatFormatting.WHITE))
-                        .append(Component.literal("\nServer: ").withStyle(ChatFormatting.GRAY))
-                        .append(Component.literal(homeData.serverId()).withStyle(ChatFormatting.GOLD))
-                        .append(Component.literal("\nDimension: ").withStyle(ChatFormatting.GRAY))
+                        .append(Component.literal(homeName).withStyle(ChatFormatting.WHITE));
+
+                if (EssentialsManager.getInstance().getStorage().requiresServerId() || 
+                    EssentialsManager.getInstance().getMessaging().requiresServerId()) {
+                    hoverText.append(Component.literal("\nServer: ").withStyle(ChatFormatting.GRAY))
+                             .append(Component.literal(homeData.serverId()).withStyle(ChatFormatting.GOLD));
+                }
+
+                hoverText.append(Component.literal("\nDimension: ").withStyle(ChatFormatting.GRAY))
                         .append(Component.literal(homeData.location().dimension()).withStyle(ChatFormatting.GOLD));
 
                 message.append(Component.literal(homeName)
@@ -234,10 +239,15 @@ public class HomeCommand {
                 
                 savage.essentials.api.data.Home homeData = profile.getHomes().get(homeName);
                 MutableComponent hoverText = Component.literal("Click to teleport to ").withStyle(ChatFormatting.GREEN)
-                        .append(Component.literal(targetPlayer + "'s " + homeName).withStyle(ChatFormatting.WHITE))
-                        .append(Component.literal("\nServer: ").withStyle(ChatFormatting.GRAY))
-                        .append(Component.literal(homeData.serverId()).withStyle(ChatFormatting.GOLD))
-                        .append(Component.literal("\nDimension: ").withStyle(ChatFormatting.GRAY))
+                        .append(Component.literal(targetPlayer + "'s " + homeName).withStyle(ChatFormatting.WHITE));
+
+                if (EssentialsManager.getInstance().getStorage().requiresServerId() || 
+                    EssentialsManager.getInstance().getMessaging().requiresServerId()) {
+                    hoverText.append(Component.literal("\nServer: ").withStyle(ChatFormatting.GRAY))
+                             .append(Component.literal(homeData.serverId()).withStyle(ChatFormatting.GOLD));
+                }
+
+                hoverText.append(Component.literal("\nDimension: ").withStyle(ChatFormatting.GRAY))
                         .append(Component.literal(homeData.location().dimension()).withStyle(ChatFormatting.GOLD));
 
                 message.append(Component.literal(homeName)

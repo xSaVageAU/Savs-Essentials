@@ -163,10 +163,15 @@ public class WarpCommand {
             }
             
             MutableComponent hoverText = Component.literal("Click to teleport to ").withStyle(ChatFormatting.GREEN)
-                    .append(Component.literal(warp.name()).withStyle(ChatFormatting.WHITE))
-                    .append(Component.literal("\nServer: ").withStyle(ChatFormatting.GRAY))
-                    .append(Component.literal(warp.serverId()).withStyle(ChatFormatting.GOLD))
-                    .append(Component.literal("\nDimension: ").withStyle(ChatFormatting.GRAY))
+                    .append(Component.literal(warp.name()).withStyle(ChatFormatting.WHITE));
+
+            if (EssentialsManager.getInstance().getStorage().requiresServerId() || 
+                EssentialsManager.getInstance().getMessaging().requiresServerId()) {
+                hoverText.append(Component.literal("\nServer: ").withStyle(ChatFormatting.GRAY))
+                         .append(Component.literal(warp.serverId()).withStyle(ChatFormatting.GOLD));
+            }
+
+            hoverText.append(Component.literal("\nDimension: ").withStyle(ChatFormatting.GRAY))
                     .append(Component.literal(warp.location().dimension()).withStyle(ChatFormatting.GOLD));
 
             message.append(Component.literal(warp.name())
