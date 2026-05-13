@@ -17,6 +17,7 @@ public class ProfileManager {
     private final StorageProvider storage;
     private final EssentialsMessaging messaging;
     private final AsyncCache<UUID, Profile> profileCache;
+    private final java.util.Map<String, UUID> nameToUuid = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Queue<savage.essentials.api.messaging.EssentialsMessaging.ProfileUpdate> warmupQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
     private volatile boolean ready = false;
 
@@ -59,7 +60,10 @@ public class ProfileManager {
      */
     public CompletableFuture<Void> loadAll() {
         return storage.loadAllProfiles().thenAccept(profiles -> {
-            profiles.forEach((uuid, profile) -> profileCache.synchronous().put(uuid, profile));
+            profiles.forEach((uuid, profile) -> {
+                profileCache.synchronous().put(uuid, profile);
+                nameToUuid.put(profile.getLastKnownName().toLowerCase(), uuid);
+            });
         });
     }
 
@@ -80,9 +84,19 @@ public class ProfileManager {
      * @return The profile, or null if not found.
      */
     public Profile getProfileByName(String name) {
-        for (Profile profile : profileCache.synchronous().asMap().values()) {
-            if (profile.getLastKnownName().equalsIgnoreCase(name)) {
-                return profile;
+        UUID uuid = nameToUuid.get(name.toLowerCase());
+        if (uuid == null) return null;
+        
+        Profile profile = getProfile(uuid);
+        if (profile != null && profile.getLastKnownName().equalsIgnoreCase(name)) {
+            return profile;
+        }
+        
+        // Fallback: If index is stale or null, do a quick scan (rare)
+        for (var entry : profileCache.synchronous().asMap().entrySet()) {
+            if (entry.getValue().getLastKnownName().equalsIgnoreCase(name)) {
+                nameToUuid.put(name.toLowerCase(), entry.getKey()); // Fix index
+                return entry.getValue();
             }
         }
         return null;
@@ -107,6 +121,7 @@ public class ProfileManager {
                 .thenApply(profile -> {
                     // Broadcast immediately so other servers can see this player/profile
                     messaging.publishProfile(EssentialsManager.getInstance().getConfig().getServerId(), uuid, profile);
+                    nameToUuid.put(profile.getLastKnownName().toLowerCase(), uuid);
                     return profile;
                 });
     }
@@ -138,6 +153,11 @@ public class ProfileManager {
      * @param save Whether to save before unloading.
      */
     public void unload(UUID uuid, boolean save) {
+        Profile profile = profileCache.synchronous().getIfPresent(uuid);
+        if (profile != null) {
+            nameToUuid.remove(profile.getLastKnownName().toLowerCase(), uuid);
+        }
+        
         if (save) {
             save(uuid).thenRun(() -> profileCache.synchronous().invalidate(uuid));
         } else {
@@ -153,9 +173,14 @@ public class ProfileManager {
      */
     public void applySync(UUID uuid, Profile incoming) {
         Profile existing = profileCache.synchronous().getIfPresent(uuid);
-        if (existing != null && existing.getRevision() >= incoming.getRevision()) {
-            return; // Ignore older or duplicate updates
+        if (existing != null) {
+            if (existing.getRevision() >= incoming.getRevision()) {
+                return; // Ignore older or duplicate updates
+            }
+            nameToUuid.remove(existing.getLastKnownName().toLowerCase(), uuid);
         }
+        
+        nameToUuid.put(incoming.getLastKnownName().toLowerCase(), uuid);
         profileCache.synchronous().put(uuid, incoming);
     }
 }
