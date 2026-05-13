@@ -14,8 +14,9 @@ dependencies {
     // Core API is required to implement the provider
     compileOnly project(":core")
     
-    // NATS client - bundled into the final jar
-    include(implementation("io.nats:jnats:2.25.2"))
+    // NATS-Fabric provides the connection lifecycle and jnats
+    compileOnly("savage.natsfabric:nats-fabric:1.0.2")
+    compileOnly("io.nats:jnats:2.25.2")
     
     // Zstd compression
     include(implementation("com.github.luben:zstd-jni:1.5.7-1"))

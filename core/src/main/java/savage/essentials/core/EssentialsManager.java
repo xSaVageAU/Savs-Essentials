@@ -68,7 +68,7 @@ public class EssentialsManager {
         // 3. Initialize the selected messaging
         try {
             this.messaging = MessagingRegistry.create(config.getMessagingType());
-            LOGGER.info("Essentials messaging initialized: {}", messaging.getClass().getSimpleName());
+            LOGGER.info("Essentials messaging initialized: {}", config.getMessagingType());
         } catch (Exception e) {
             LOGGER.error("Failed to initialize messaging provider: " + config.getMessagingType(), e);
             this.messaging = new NoOpMessaging();

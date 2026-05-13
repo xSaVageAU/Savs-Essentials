@@ -23,14 +23,22 @@ public class NatsMessagingProvider implements EssentialsMessaging {
     private Consumer<ProfileUpdate> profileListener;
     private Consumer<WarpUpdate> warpListener;
 
+    private java.lang.AutoCloseable watcherSubscription;
+
     public NatsMessagingProvider() {
-        this.kv = NatsKvUtil.getKv();
-        startWatcher();
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            startWatcher();
+        });
+    }
+
+    private KeyValue getKv() {
+        if (kv == null) kv = NatsKvUtil.getKv();
+        return kv;
     }
 
     private void startWatcher() {
         try {
-            kv.watchAll(new KeyValueWatcher() {
+            watcherSubscription = getKv().watchAll(new KeyValueWatcher() {
                 @Override
                 public void watch(KeyValueEntry entry) {
                     if (entry.getValue() == null) {
@@ -65,7 +73,7 @@ public class NatsMessagingProvider implements EssentialsMessaging {
     @Override
     public void publishProfile(String sourceServerId, UUID playerUuid, Profile profile) {
         try {
-            NatsKvUtil.writeToKv(kv, "profiles." + playerUuid, new NatsKvUtil.ProfileWire(sourceServerId, playerUuid.toString(), profile));
+            NatsKvUtil.writeToKv(getKv(), "profiles." + playerUuid, new NatsKvUtil.ProfileWire(sourceServerId, playerUuid.toString(), profile));
         } catch (Exception e) {
             LOGGER.error("Failed to publish profile {}", playerUuid, e);
         }
@@ -74,7 +82,7 @@ public class NatsMessagingProvider implements EssentialsMessaging {
     @Override
     public void publishWarp(String sourceServerId, Warp warp) {
         try {
-            NatsKvUtil.writeToKv(kv, "warps." + warp.name().toLowerCase(), new NatsKvUtil.WarpWire(sourceServerId, warp.name(), warp, false));
+            NatsKvUtil.writeToKv(getKv(), "warps." + warp.name().toLowerCase(), new NatsKvUtil.WarpWire(sourceServerId, warp.name(), warp, false));
         } catch (Exception e) {
             LOGGER.error("Failed to publish warp {}", warp.name(), e);
         }
@@ -83,9 +91,7 @@ public class NatsMessagingProvider implements EssentialsMessaging {
     @Override
     public void publishWarpDelete(String sourceServerId, String warpName) {
         try {
-            // In standalone mode, kv.delete() acts as the broadcast signal (tombstone).
-            // We don't need to write a "deleted" wire object first as it causes a race/double-event.
-            kv.delete("warps." + warpName.toLowerCase());
+            getKv().delete("warps." + warpName.toLowerCase());
         } catch (Exception e) {
             LOGGER.error("Failed to publish warp delete {}", warpName, e);
         }
@@ -103,6 +109,14 @@ public class NatsMessagingProvider implements EssentialsMessaging {
 
     @Override
     public void shutdown() {
-        // Handled centrally
+        if (watcherSubscription != null) {
+            try {
+                watcherSubscription.close();
+            } catch (IllegalStateException ignored) {
+                // Dispatcher was already closed by the central connection lifecycle
+            } catch (Exception e) {
+                LOGGER.error("Failed to close NATS KV watcher", e);
+            }
+        }
     }
 }

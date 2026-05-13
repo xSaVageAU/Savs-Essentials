@@ -28,7 +28,12 @@ public class NatsStorageProvider implements StorageProvider {
 
     @Override
     public void init() {
-        this.kv = NatsKvUtil.getKv();
+        // We initialize lazily to prevent blocking the main thread before NATS connects
+    }
+
+    private KeyValue getKv() {
+        if (kv == null) kv = NatsKvUtil.getKv();
+        return kv;
     }
 
     @Override
@@ -37,7 +42,7 @@ public class NatsStorageProvider implements StorageProvider {
             Map<UUID, Profile> profiles = new HashMap<>();
             CountDownLatch latch = new CountDownLatch(1);
             try {
-                var sub = kv.watchAll(new KeyValueWatcher() {
+                var sub = getKv().watchAll(new KeyValueWatcher() {
                     @Override
                     public void watch(KeyValueEntry entry) {
                         if (entry.getValue() == null || !entry.getKey().startsWith("profiles.")) return;
@@ -67,7 +72,7 @@ public class NatsStorageProvider implements StorageProvider {
     @Override
     public CompletableFuture<Profile> loadProfile(UUID uuid) {
         return CompletableFuture.supplyAsync(() -> {
-            NatsKvUtil.ProfileWire wire = NatsKvUtil.readFromKv(kv, "profiles." + uuid.toString(), NatsKvUtil.ProfileWire.class);
+            NatsKvUtil.ProfileWire wire = NatsKvUtil.readFromKv(getKv(), "profiles." + uuid.toString(), NatsKvUtil.ProfileWire.class);
             return wire != null ? wire.profile() : null;
         });
     }
@@ -77,14 +82,14 @@ public class NatsStorageProvider implements StorageProvider {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 String key = "profiles." + uuid.toString();
-                NatsKvUtil.ProfileWire existingWire = NatsKvUtil.readFromKv(kv, key, NatsKvUtil.ProfileWire.class);
+                NatsKvUtil.ProfileWire existingWire = NatsKvUtil.readFromKv(getKv(), key, NatsKvUtil.ProfileWire.class);
                 if (existingWire != null && existingWire.profile().getRevision() >= profile.getRevision()) {
                     LOGGER.debug("Skipped saving profile {} to NATS KV due to version collision", uuid);
                     return false;
                 }
 
                 NatsKvUtil.ProfileWire wire = new NatsKvUtil.ProfileWire(savage.essentials.core.EssentialsManager.getInstance().getConfig().getServerId(), uuid.toString(), profile);
-                NatsKvUtil.writeToKv(kv, key, wire);
+                NatsKvUtil.writeToKv(getKv(), key, wire);
                 return true;
             } catch (Exception e) {
                 LOGGER.error("Failed to save profile {} to KV", uuid, e);
@@ -99,7 +104,7 @@ public class NatsStorageProvider implements StorageProvider {
             Map<String, Warp> warps = new HashMap<>();
             CountDownLatch latch = new CountDownLatch(1);
             try {
-                var sub = kv.watchAll(new KeyValueWatcher() {
+                var sub = getKv().watchAll(new KeyValueWatcher() {
                     @Override
                     public void watch(KeyValueEntry entry) {
                         if (entry.getValue() == null || !entry.getKey().startsWith("warps.")) return;
@@ -133,14 +138,14 @@ public class NatsStorageProvider implements StorageProvider {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 String key = "warps." + warp.name().toLowerCase();
-                NatsKvUtil.WarpWire existingWire = NatsKvUtil.readFromKv(kv, key, NatsKvUtil.WarpWire.class);
+                NatsKvUtil.WarpWire existingWire = NatsKvUtil.readFromKv(getKv(), key, NatsKvUtil.WarpWire.class);
                 if (existingWire != null && existingWire.warp() != null && existingWire.warp().revision() >= warp.revision()) {
                     LOGGER.debug("Skipped saving warp {} to NATS KV due to version collision", warp.name());
                     return false;
                 }
 
                 NatsKvUtil.WarpWire wire = new NatsKvUtil.WarpWire(savage.essentials.core.EssentialsManager.getInstance().getConfig().getServerId(), warp.name(), warp, false);
-                NatsKvUtil.writeToKv(kv, key, wire);
+                NatsKvUtil.writeToKv(getKv(), key, wire);
                 return true;
             } catch (Exception e) {
                 LOGGER.error("Failed to save warp {} to KV", warp.name(), e);
@@ -153,7 +158,7 @@ public class NatsStorageProvider implements StorageProvider {
     public CompletableFuture<Boolean> deleteWarp(String name) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                kv.delete("warps." + name.toLowerCase());
+                getKv().delete("warps." + name.toLowerCase());
                 return true;
             } catch (Exception e) {
                 LOGGER.error("Failed to delete warp {} from KV", name, e);

@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import savage.essentials.api.data.Profile;
 import savage.essentials.api.data.Warp;
 import savage.essentials.nats.standalone.NatsConfig;
-import savage.essentials.nats.standalone.NatsConnection;
+
 
 import java.nio.charset.StandardCharsets;
 
@@ -22,7 +22,21 @@ public class NatsKvUtil {
 
     public static synchronized KeyValue getKv() {
         if (kvInstance == null) {
-            Connection conn = NatsConnection.get();
+            Connection conn = null;
+            // Wait for NATS to connect
+            while (true) {
+                conn = savage.natsfabric.NatsManager.getInstance().getConnection();
+                if (conn != null && conn.getStatus() == Connection.Status.CONNECTED) {
+                    break;
+                }
+                try {
+                    Thread.sleep(250);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted while waiting for NATS connection", e);
+                }
+            }
+            
             NatsConfig config = NatsConfig.get();
             try {
                 try {
