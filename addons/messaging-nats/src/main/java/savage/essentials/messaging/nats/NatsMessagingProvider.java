@@ -16,6 +16,10 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 public class NatsMessagingProvider implements EssentialsMessaging {
+    @Override
+    public boolean requiresServerId() {
+        return true;
+    }
     private static final Logger LOGGER = LoggerFactory.getLogger("savs-essentials-nats");
     private static final Gson GSON = new GsonBuilder().create();
 
@@ -30,10 +34,10 @@ public class NatsMessagingProvider implements EssentialsMessaging {
     }
 
     @Override
-    public void publishProfile(UUID sourceServerId, UUID playerUuid, Profile profile) {
+    public void publishProfile(String sourceServerId, UUID playerUuid, Profile profile) {
         if (connection == null) return;
         try {
-            ProfileWire wire = new ProfileWire(sourceServerId.toString(), playerUuid.toString(), profile);
+            ProfileWire wire = new ProfileWire(sourceServerId, playerUuid.toString(), profile);
             byte[] data = GSON.toJson(wire).getBytes(StandardCharsets.UTF_8);
             connection.publish(prefix + ".profiles." + playerUuid, CompressionUtil.compress(data));
         } catch (Exception e) {
@@ -42,10 +46,10 @@ public class NatsMessagingProvider implements EssentialsMessaging {
     }
 
     @Override
-    public void publishWarp(UUID sourceServerId, Warp warp) {
+    public void publishWarp(String sourceServerId, Warp warp) {
         if (connection == null) return;
         try {
-            WarpWire wire = new WarpWire(sourceServerId.toString(), warp.name(), warp, false);
+            WarpWire wire = new WarpWire(sourceServerId, warp.name(), warp, false);
             byte[] data = GSON.toJson(wire).getBytes(StandardCharsets.UTF_8);
             connection.publish(prefix + ".warps." + warp.name(), CompressionUtil.compress(data));
         } catch (Exception e) {
@@ -54,10 +58,10 @@ public class NatsMessagingProvider implements EssentialsMessaging {
     }
 
     @Override
-    public void publishWarpDelete(UUID sourceServerId, String warpName) {
+    public void publishWarpDelete(String sourceServerId, String warpName) {
         if (connection == null) return;
         try {
-            WarpWire wire = new WarpWire(sourceServerId.toString(), warpName, null, true);
+            WarpWire wire = new WarpWire(sourceServerId, warpName, null, true);
             byte[] data = GSON.toJson(wire).getBytes(StandardCharsets.UTF_8);
             connection.publish(prefix + ".warps." + warpName, CompressionUtil.compress(data));
         } catch (Exception e) {
@@ -73,7 +77,7 @@ public class NatsMessagingProvider implements EssentialsMessaging {
                 byte[] decompressed = CompressionUtil.decompress(msg.getData());
                 ProfileWire wire = GSON.fromJson(new String(decompressed, StandardCharsets.UTF_8), ProfileWire.class);
                 listener.accept(new ProfileUpdate(
-                        UUID.fromString(wire.serverId),
+                        wire.serverId,
                         UUID.fromString(wire.playerUuid),
                         wire.profile
                 ));
@@ -93,7 +97,7 @@ public class NatsMessagingProvider implements EssentialsMessaging {
                 byte[] decompressed = CompressionUtil.decompress(msg.getData());
                 WarpWire wire = GSON.fromJson(new String(decompressed, StandardCharsets.UTF_8), WarpWire.class);
                 listener.accept(new WarpUpdate(
-                        UUID.fromString(wire.serverId),
+                        wire.serverId,
                         wire.name,
                         wire.warp,
                         wire.deleted

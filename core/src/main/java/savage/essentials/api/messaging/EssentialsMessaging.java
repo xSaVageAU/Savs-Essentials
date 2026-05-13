@@ -11,6 +11,12 @@ import java.util.function.Consumer;
  * Handles pub/sub broadcasting of data changes across servers.
  */
 public interface EssentialsMessaging {
+    /**
+     * @return true if this provider requires a unique serverId to function correctly.
+     */
+    default boolean requiresServerId() {
+        return false;
+    }
 
     /**
      * Publishes a profile update to all listening servers.
@@ -19,17 +25,17 @@ public interface EssentialsMessaging {
      * @param playerUuid The UUID of the player.
      * @param profile The updated profile data.
      */
-    void publishProfile(UUID sourceServerId, UUID playerUuid, Profile profile);
+    void publishProfile(String sourceServerId, UUID playerUuid, Profile profile);
 
     /**
      * Publishes a warp update to all listening servers.
      */
-    void publishWarp(UUID sourceServerId, Warp warp);
+    void publishWarp(String sourceServerId, Warp warp);
 
     /**
      * Publishes a warp deletion.
      */
-    void publishWarpDelete(UUID sourceServerId, String warpName);
+    void publishWarpDelete(String sourceServerId, String warpName);
 
     /**
      * Subscribes to profile updates.
@@ -46,6 +52,6 @@ public interface EssentialsMessaging {
      */
     void shutdown();
 
-    record ProfileUpdate(UUID sourceServerId, UUID playerUuid, Profile profile) {}
-    record WarpUpdate(UUID sourceServerId, String warpName, Warp warp, boolean deleted) {}
+    record ProfileUpdate(String sourceServerId, UUID playerUuid, Profile profile) {}
+    record WarpUpdate(String sourceServerId, String warpName, Warp warp, boolean deleted) {}
 }

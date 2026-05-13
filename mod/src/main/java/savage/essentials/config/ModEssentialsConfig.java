@@ -1,14 +1,13 @@
 package savage.essentials.config;
 
 import savage.essentials.core.EssentialsCoreConfig;
-import java.util.UUID;
 
 public class ModEssentialsConfig implements EssentialsCoreConfig {
     
     // Configurable fields with defaults
     private String storageType = "json";
     private String messagingType = "none";
-    private UUID serverId = UUID.randomUUID();
+    private String serverId = "";
     private int defaultMaxHomes = 10;
     private int teleportDelaySeconds = 3;
     
@@ -23,7 +22,7 @@ public class ModEssentialsConfig implements EssentialsCoreConfig {
     }
 
     @Override
-    public UUID getServerId() {
+    public String getServerId() {
         return serverId;
     }
 

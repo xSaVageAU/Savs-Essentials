@@ -27,6 +27,11 @@ public class AsyncStorage implements StorageProvider {
     }
 
     @Override
+    public boolean requiresServerId() {
+        return delegate.requiresServerId();
+    }
+
+    @Override
     public void init() {
         delegate.init();
     }

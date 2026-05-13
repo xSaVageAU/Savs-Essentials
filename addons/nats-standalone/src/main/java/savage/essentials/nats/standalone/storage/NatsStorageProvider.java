@@ -22,6 +22,11 @@ public class NatsStorageProvider implements StorageProvider {
     private KeyValue kv;
 
     @Override
+    public boolean requiresServerId() {
+        return true;
+    }
+
+    @Override
     public void init() {
         this.kv = NatsKvUtil.getKv();
     }
@@ -78,7 +83,7 @@ public class NatsStorageProvider implements StorageProvider {
                     return false;
                 }
 
-                NatsKvUtil.ProfileWire wire = new NatsKvUtil.ProfileWire(savage.essentials.core.EssentialsManager.getInstance().getConfig().getServerId().toString(), uuid.toString(), profile);
+                NatsKvUtil.ProfileWire wire = new NatsKvUtil.ProfileWire(savage.essentials.core.EssentialsManager.getInstance().getConfig().getServerId(), uuid.toString(), profile);
                 NatsKvUtil.writeToKv(kv, key, wire);
                 return true;
             } catch (Exception e) {
@@ -134,7 +139,7 @@ public class NatsStorageProvider implements StorageProvider {
                     return false;
                 }
 
-                NatsKvUtil.WarpWire wire = new NatsKvUtil.WarpWire(savage.essentials.core.EssentialsManager.getInstance().getConfig().getServerId().toString(), warp.name(), warp, false);
+                NatsKvUtil.WarpWire wire = new NatsKvUtil.WarpWire(savage.essentials.core.EssentialsManager.getInstance().getConfig().getServerId(), warp.name(), warp, false);
                 NatsKvUtil.writeToKv(kv, key, wire);
                 return true;
             } catch (Exception e) {

@@ -190,7 +190,7 @@ public class HomeCommand {
                 MutableComponent hoverText = Component.literal("Click to teleport to ").withStyle(ChatFormatting.GREEN)
                         .append(Component.literal(homeName).withStyle(ChatFormatting.WHITE))
                         .append(Component.literal("\nServer: ").withStyle(ChatFormatting.GRAY))
-                        .append(Component.literal(homeData.serverId().toString()).withStyle(ChatFormatting.GOLD))
+                        .append(Component.literal(homeData.serverId()).withStyle(ChatFormatting.GOLD))
                         .append(Component.literal("\nDimension: ").withStyle(ChatFormatting.GRAY))
                         .append(Component.literal(homeData.location().dimension()).withStyle(ChatFormatting.GOLD));
 
@@ -236,7 +236,7 @@ public class HomeCommand {
                 MutableComponent hoverText = Component.literal("Click to teleport to ").withStyle(ChatFormatting.GREEN)
                         .append(Component.literal(targetPlayer + "'s " + homeName).withStyle(ChatFormatting.WHITE))
                         .append(Component.literal("\nServer: ").withStyle(ChatFormatting.GRAY))
-                        .append(Component.literal(homeData.serverId().toString()).withStyle(ChatFormatting.GOLD))
+                        .append(Component.literal(homeData.serverId()).withStyle(ChatFormatting.GOLD))
                         .append(Component.literal("\nDimension: ").withStyle(ChatFormatting.GRAY))
                         .append(Component.literal(homeData.location().dimension()).withStyle(ChatFormatting.GOLD));
 

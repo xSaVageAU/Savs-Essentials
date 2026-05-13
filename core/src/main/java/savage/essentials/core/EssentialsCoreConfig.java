@@ -1,7 +1,5 @@
 package savage.essentials.core;
 
-import java.util.UUID;
-
 /**
  * Interface for configuration values required by the essentials engine.
  * Implementations (Mods) provide these values to the core.
@@ -21,7 +19,7 @@ public interface EssentialsCoreConfig {
     /**
      * @return The unique ID of this server instance, used for cross-server sync.
      */
-    UUID getServerId();
+    String getServerId();
 
     /**
      * @return The default maximum number of homes a player can have.

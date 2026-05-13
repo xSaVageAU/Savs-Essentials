@@ -165,7 +165,7 @@ public class WarpCommand {
             MutableComponent hoverText = Component.literal("Click to teleport to ").withStyle(ChatFormatting.GREEN)
                     .append(Component.literal(warp.name()).withStyle(ChatFormatting.WHITE))
                     .append(Component.literal("\nServer: ").withStyle(ChatFormatting.GRAY))
-                    .append(Component.literal(warp.serverId().toString()).withStyle(ChatFormatting.GOLD))
+                    .append(Component.literal(warp.serverId()).withStyle(ChatFormatting.GOLD))
                     .append(Component.literal("\nDimension: ").withStyle(ChatFormatting.GRAY))
                     .append(Component.literal(warp.location().dimension()).withStyle(ChatFormatting.GOLD));
 

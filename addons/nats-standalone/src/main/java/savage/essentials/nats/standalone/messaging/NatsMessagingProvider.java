@@ -14,6 +14,10 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 public class NatsMessagingProvider implements EssentialsMessaging {
+    @Override
+    public boolean requiresServerId() {
+        return true;
+    }
     private static final Logger LOGGER = LoggerFactory.getLogger("savs-essentials-nats-standalone");
     private KeyValue kv;
     private Consumer<ProfileUpdate> profileListener;
@@ -32,7 +36,7 @@ public class NatsMessagingProvider implements EssentialsMessaging {
                     if (entry.getValue() == null) {
                         if (entry.getKey().startsWith("warps.") && warpListener != null) {
                             String name = entry.getKey().substring("warps.".length());
-                            warpListener.accept(new WarpUpdate(new UUID(0, 0), name, null, true));
+                            warpListener.accept(new WarpUpdate("unknown", name, null, true));
                         }
                         return;
                     }
@@ -40,10 +44,10 @@ public class NatsMessagingProvider implements EssentialsMessaging {
                     try {
                         if (entry.getKey().startsWith("profiles.") && profileListener != null) {
                             NatsKvUtil.ProfileWire wire = NatsKvUtil.parseWire(entry.getValue(), NatsKvUtil.ProfileWire.class);
-                            if (wire != null) profileListener.accept(new ProfileUpdate(UUID.fromString(wire.serverId()), UUID.fromString(wire.playerUuid()), wire.profile()));
+                            if (wire != null) profileListener.accept(new ProfileUpdate(wire.serverId(), UUID.fromString(wire.playerUuid()), wire.profile()));
                         } else if (entry.getKey().startsWith("warps.") && warpListener != null) {
                             NatsKvUtil.WarpWire wire = NatsKvUtil.parseWire(entry.getValue(), NatsKvUtil.WarpWire.class);
-                            if (wire != null) warpListener.accept(new WarpUpdate(UUID.fromString(wire.serverId()), wire.name(), wire.warp(), wire.deleted()));
+                            if (wire != null) warpListener.accept(new WarpUpdate(wire.serverId(), wire.name(), wire.warp(), wire.deleted()));
                         }
                     } catch (Exception e) {
                         LOGGER.error("Failed to parse KV update for {}", entry.getKey(), e);
@@ -59,25 +63,25 @@ public class NatsMessagingProvider implements EssentialsMessaging {
     }
 
     @Override
-    public void publishProfile(UUID sourceServerId, UUID playerUuid, Profile profile) {
+    public void publishProfile(String sourceServerId, UUID playerUuid, Profile profile) {
         try {
-            NatsKvUtil.writeToKv(kv, "profiles." + playerUuid, new NatsKvUtil.ProfileWire(sourceServerId.toString(), playerUuid.toString(), profile));
+            NatsKvUtil.writeToKv(kv, "profiles." + playerUuid, new NatsKvUtil.ProfileWire(sourceServerId, playerUuid.toString(), profile));
         } catch (Exception e) {
             LOGGER.error("Failed to publish profile {}", playerUuid, e);
         }
     }
 
     @Override
-    public void publishWarp(UUID sourceServerId, Warp warp) {
+    public void publishWarp(String sourceServerId, Warp warp) {
         try {
-            NatsKvUtil.writeToKv(kv, "warps." + warp.name().toLowerCase(), new NatsKvUtil.WarpWire(sourceServerId.toString(), warp.name(), warp, false));
+            NatsKvUtil.writeToKv(kv, "warps." + warp.name().toLowerCase(), new NatsKvUtil.WarpWire(sourceServerId, warp.name(), warp, false));
         } catch (Exception e) {
             LOGGER.error("Failed to publish warp {}", warp.name(), e);
         }
     }
 
     @Override
-    public void publishWarpDelete(UUID sourceServerId, String warpName) {
+    public void publishWarpDelete(String sourceServerId, String warpName) {
         try {
             // In standalone mode, kv.delete() acts as the broadcast signal (tombstone).
             // We don't need to write a "deleted" wire object first as it causes a race/double-event.

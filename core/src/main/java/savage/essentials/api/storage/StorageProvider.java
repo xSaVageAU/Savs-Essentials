@@ -13,6 +13,13 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface StorageProvider {
     /**
+     * @return true if this provider requires a unique serverId to function correctly.
+     */
+    default boolean requiresServerId() {
+        return false;
+    }
+
+    /**
      * Called when the storage provider is initialized.
      */
     void init();

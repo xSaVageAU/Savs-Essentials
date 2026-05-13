@@ -32,6 +32,11 @@ public class JsonStorageProvider implements StorageProvider {
     }
 
     @Override
+    public boolean requiresServerId() {
+        return false;
+    }
+
+    @Override
     public void init() {
         try {
             Files.createDirectories(profileDir);

@@ -70,7 +70,7 @@ public class Profile {
         return metadata;
     }
 
-    public void setHome(String name, Location location, java.util.UUID serverId) {
+    public void setHome(String name, Location location, String serverId) {
         homes.put(name.toLowerCase(), new Home(name, location, serverId));
         incrementRevision();
     }

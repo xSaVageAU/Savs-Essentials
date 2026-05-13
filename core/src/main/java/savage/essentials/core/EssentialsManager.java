@@ -74,7 +74,18 @@ public class EssentialsManager {
             this.messaging = new NoOpMessaging();
         }
 
-        // 4. Initialize Managers
+        // 4. Validate Server ID if required by either provider
+        if ((storage.requiresServerId() || messaging.requiresServerId()) && (config.getServerId() == null || config.getServerId().isBlank())) {
+            LOGGER.error("**************************************************");
+            LOGGER.error("SAV'S ESSENTIALS CONFIGURATION ERROR");
+            LOGGER.error("The selected providers ({} / {}) require a unique 'serverId'!", config.getStorageType(), config.getMessagingType());
+            LOGGER.error("Please set a human-readable name in your config file.");
+            LOGGER.error("Example: \"serverId\": \"survival-1\"");
+            LOGGER.error("**************************************************");
+            throw new RuntimeException("Missing required 'serverId' in config");
+        }
+
+        // 5. Initialize Managers
         this.profileManager = new ProfileManager(storage, messaging);
         this.warpManager = new WarpManager(storage, messaging);
         this.teleportManager = new TeleportManager();
