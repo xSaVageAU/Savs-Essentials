@@ -7,7 +7,7 @@ import java.util.UUID;
  */
 public record Warp(String name, Location location, UUID serverId, long revision) {
     public Warp(String name, Location location, UUID serverId) {
-        this(name, location, serverId, System.currentTimeMillis()); // Use timestamp as initial revision
+        this(name, location, serverId, 0); // Start at 0
     }
     
     public Warp withIncrementedRevision() {

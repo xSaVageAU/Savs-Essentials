@@ -105,7 +105,7 @@ public class WarpCommand {
             Warp existing = EssentialsManager.getInstance().getWarpManager().getWarp(warpName);
             
             // Fix: The new revision must be higher than the current existing one in NATS
-            long nextRevision = (existing != null) ? existing.revision() + 1 : System.currentTimeMillis();
+            long nextRevision = (existing != null) ? existing.revision() + 1 : 0;
             Warp retryWarp = new Warp(warpName, warpToSave.location(), warpToSave.serverId(), nextRevision);
             
             EssentialsManager.getInstance().getWarpManager().setWarp(retryWarp).thenAccept(retrySuccess -> {

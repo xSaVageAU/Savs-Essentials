@@ -99,7 +99,8 @@ public class WarpManager {
      */
     public CompletableFuture<Boolean> setWarp(Warp warp) {
         Warp existing = warps.get(warp.name().toLowerCase());
-        Warp toSave = (existing != null) ? warp.withIncrementedRevision() : warp;
+        long nextRevision = (existing != null) ? existing.revision() + 1 : warp.revision();
+        Warp toSave = new Warp(warp.name(), warp.location(), warp.serverId(), nextRevision);
 
         warps.put(toSave.name().toLowerCase(), toSave);
         return storage.saveWarp(toSave).thenApply(success -> {
