@@ -16,6 +16,10 @@ public class Profile {
     private final Map<String, Home> homes = new ConcurrentHashMap<>();
     private final Map<String, String> metadata = new ConcurrentHashMap<>();
 
+    public Profile() {
+        // Required for serialization libraries like Jackson
+    }
+
     public Profile(String lastKnownName) {
         this(lastKnownName, System.currentTimeMillis());
     }
